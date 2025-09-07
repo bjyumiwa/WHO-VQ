@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja" data-lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>WHO VQ - Start</title>
+  <style>
+    html,body {
+      margin:0; padding:0; height:100%; overflow:hidden;
+      font-family:system-ui,"Noto Sans JP",sans-serif;
+      background:#000; color:#fff;
+    }
+    .bg {
+      position:fixed; inset:0;
+      background-image:url('./public/bg/sunrise.jpg');
+      background-size:cover;
+      background-position:center bottom; /* PC/スマホで太陽が見える位置 */
+    }
+    #hero {
+      position:fixed; inset:0; display:flex;
+      flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; gap:20px;
+      background:rgba(0,0,0,.25);
+    }
+    #hero h1 {
+      font-size:clamp(22px,5vw,40px);
+      margin:0; text-shadow:0 2px 8px rgba(0,0,0,.5);
+    }
+    .btns { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+    .btns button {
+      padding:12px 20px; border:none; border-radius:12px;
+      font-weight:700; cursor:pointer;
+      background:rgba(255,255,255,.9); color:#111;
+      transition:transform .2s;
+    }
+    .btns button:hover { transform:translateY(-2px); }
+    #langBtn {
+      position:absolute; top:10px; right:10px;
+      padding:8px 14px; border:none; border-radius:10px;
+      background:rgba(255,255,255,.9); color:#111; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景 -->
+  <div class="bg"></div>
+
+  <!-- Hero -->
+  <div id="hero">
+    <h1 id="title">朝日の海へようこそ</h1>
+    <div class="btns">
+      <button id="btnStart">スタート</button>
+      <button id="btnContinue">続きから</button>
+      <button id="btnAbout">研究について</button>
+    </div>
+  </div>
+
+  <!-- 言語切り替え -->
+  <button id="langBtn">EN</button>
+
+  <script>
+    const I18N = {
+      ja:{title:'朝日の海へようこそ', start:'スタート', cont:'続きから', about:'研究について', langNext:'EN'},
+      en:{title:'Welcome to the Sunrise Shore', start:'Start', cont:'Continue', about:'About this research', langNext:'中文'},
+      zh:{title:'欢迎来到朝阳海岸', start:'开始', cont:'继续', about:'关于研究', langNext:'한국어'},
+      ko:{title:'아침 해변에 오신 것을 환영합니다', start:'시작', cont:'계속', about:'연구에 대하여', langNext:'日本語'},
+    };
+
+    const LANG_ORDER=['ja','en','zh','ko'];
+    const getLang=()=>localStorage.getItem('who_vq.lang')||'ja';
+    function setLang(lang){
+      const L=I18N[lang]; document.documentElement.setAttribute('lang',lang);
+      localStorage.setItem('who_vq.lang',lang);
+      document.getElementById('title').textContent=L.title;
+      document.getElementById('btnStart').textContent=L.start;
+      document.getElementById('btnContinue').textContent=L.cont;
+      document.getElementById('btnAbout').textContent=L.about;
+      const next=LANG_ORDER[(LANG_ORDER.indexOf(lang)+1)%LANG_ORDER.length];
+      document.getElementById('langBtn').textContent=I18N[lang].langNext;
+      document.getElementById('langBtn').dataset.next=next;
+    }
+    function toggleLang(){
+      const next=document.getElementById('langBtn').dataset.next;
+      setLang(next);
+    }
+
+    // ボタン動作
+    document.getElementById('btnStart').onclick=()=>location.href='who_vq_char.html';
+    document.getElementById('btnContinue').onclick=()=>location.href='who_vq_beach.html';
+    document.getElementById('btnAbout').onclick=()=>location.href='about/';
+    document.getElementById('langBtn').onclick=()=>toggleLang();
+
+    // 初期化
+    setLang(getLang());
+  </script>
+</body>
+</html>
