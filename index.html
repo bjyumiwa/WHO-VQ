@@ -1,59 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>WHO VQ - index</title>
-<style>
-  html,body{margin:0;height:100%;font-family:system-ui,"Noto Sans JP",sans-serif;color:#fff;background:#000}
-  .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .5s}
-  .bg.show{opacity:1}
-  #sunrise { background-image:url('./public/items/bg/sunrise.jpg'); }
-  #beach   { background-image:url('./public/items/bg/beach_day.jpg'); display:none; }
-  #night   { background-image:url('./public/items/bg/night_beach.jpg'); display:none; }
-  #ui{position:fixed;inset:auto 0 20px;display:flex;gap:8px;justify-content:center}
-  #bucket{position:fixed;right:12px;bottom:12px;width:min(16vw,140px)}
-  #bucket img{width:100%;display:block}
-  .btn{border:none;border-radius:10px;padding:10px 16px;background:#fff;color:#111;cursor:pointer}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>WHO VQ — Start</title>
+  <script src="./web/talk.js"></script>
+  <style>
+    html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;
+      font-family:system-ui,"Noto Sans JP",sans-serif}
+    .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:.6s}
+    .bg.show{opacity:1}
+    #top{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:10px}
+    #top button{border:none;border-radius:10px;padding:6px 10px;background:#fff;color:#111;cursor:pointer}
+    #hero{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;background:rgba(0,0,0,.2)}
+    #hero h1{margin:0 16px;font-size:clamp(20px,4vw,36px);text-shadow:0 2px 8px rgba(0,0,0,.4)}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .btns a, .btns button{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
+  </style>
 </head>
 <body>
-  <!-- 背景 -->
-  <div id="sunrise" class="bg show" aria-hidden="true"></div>
-  <div id="beach" class="bg" aria-hidden="true"></div>
-  <div id="night" class="bg" aria-hidden="true"></div>
+  <div class="bg show" style="background-image:url('./public/bg/sunrise.jpg')"></div>
 
-  <!-- バケツ（画像テスト用） -->
-  <div id="bucket">
-    <img src="./public/bucket.png.png" alt="bucket">
+  <div id="top">
+    <button id="btnAbout">研究について</button>
+    <button id="btnLang">EN</button>
   </div>
 
-  <!-- UI -->
-  <div id="ui">
-    <button class="btn" id="toBeach">ビーチ背景</button>
-    <button class="btn" id="toNight">夜背景</button>
-    <button class="btn" id="toSunrise">朝日背景</button>
-    <a class="btn" href="./night.html">会話ページへ</a>
+  <div id="hero">
+    <h1 id="heroTitle">朝日の海へようこそ</h1>
+    <div class="btns">
+      <a id="btnStart" href="./char.html">スタート</a>
+      <button id="btnContinue">続きから</button>
+    </div>
   </div>
 
-<script>
-  const sunrise = document.getElementById('sunrise');
-  const beach   = document.getElementById('beach');
-  const night   = document.getElementById('night');
+  <script>
+    const L = setLang(getLang());
+    $("#btnAbout").textContent = L.about;
+    $("#heroTitle").textContent = L.hero;
+    $("#btnStart").textContent  = L.start;
+    $("#btnContinue").textContent= L.cont;
+    $("#btnLang").textContent   = nextLangLabel(getLang());
 
-  function show(id){
-    [sunrise, beach, night].forEach(el=>{
-      el.classList.remove('show');
-      el.style.display = 'none';
-    });
-    const t = document.getElementById(id);
-    t.style.display = 'block';
-    requestAnimationFrame(()=>t.classList.add('show'));
-  }
+    $("#btnLang").onclick = () => {
+      const cur = getLang();
+      const order = ["ja","en","zh","ko"];
+      const next = order[(order.indexOf(cur)+1)%order.length];
+      const LL = setLang(next);
+      $("#btnAbout").textContent = LL.about;
+      $("#heroTitle").textContent = LL.hero;
+      $("#btnStart").textContent  = LL.start;
+      $("#btnContinue").textContent= LL.cont;
+      $("#btnLang").textContent   = nextLangLabel(next);
+    };
 
-  document.getElementById('toBeach').onclick   = ()=>show('beach');
-  document.getElementById('toNight').onclick   = ()=>show('night');
-  document.getElementById('toSunrise').onclick = ()=>show('sunrise');
-</script>
+    $("#btnAbout").onclick = () => location.href = "./about.html";
+    $("#btnContinue").onclick = () => {
+      const saved = store.get("whoai.char", null);
+      const last  = store.get("whoai.lastScene", "beach");
+      if (!saved) location.href = "./char.html";
+      else if (last === "night") location.href = "./night.html";
+      else location.href = "./beach.html";
+    };
+  </script>
 </body>
 </html>
