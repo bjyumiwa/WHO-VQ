@@ -2,66 +2,75 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>WHO VQ — Start</title>
-  <script src="./web/talk.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>WHO VQ</title>
   <style>
-    html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;
-      font-family:system-ui,"Noto Sans JP",sans-serif}
-    .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:.6s}
-    .bg.show{opacity:1}
-    #top{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:10px}
-    #top button{border:none;border-radius:10px;padding:6px 10px;background:#fff;color:#111;cursor:pointer}
-    #hero{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;background:rgba(0,0,0,.2)}
-    #hero h1{margin:0 16px;font-size:clamp(20px,4vw,36px);text-shadow:0 2px 8px rgba(0,0,0,.4)}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-    .btns a, .btns button{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
+    html,body {
+      margin:0; height:100%; overflow:hidden; background:#000; color:#fff;
+      font-family:system-ui,"Noto Sans JP",sans-serif;
+      touch-action:none; overscroll-behavior:none;
+    }
+    .bg {
+      position:fixed; inset:0;
+      background-size:cover; background-position:center;
+      opacity:0; transition:opacity .7s;
+      pointer-events:none;  /* 背景がクリックを奪わない */
+      z-index:0;
+    }
+    .bg.show { opacity:1; }
+
+    #topbar {
+      position:fixed; left:0; right:0; top:0; z-index:10;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 10px;
+      background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));
+    }
+    #topbar button {
+      padding:6px 10px; border:none; border-radius:10px;
+      background:rgba(255,255,255,.92); color:#111; cursor:pointer;
+    }
+
+    #hero {
+      position:fixed; inset:0; z-index:5;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:18px; text-align:center; background:rgba(0,0,0,.15);
+    }
+    #hero h1 { font-size:clamp(20px,4vw,36px); margin:0 16px; }
+    .heroBtns { display:flex; gap:12px; }
+    .heroBtns button {
+      padding:12px 18px; border:none; border-radius:12px;
+      cursor:pointer; font-weight:700;
+    }
   </style>
 </head>
 <body>
-  <div class="bg show" style="background-image:url('./public/bg/sunrise.jpg')"></div>
+  <!-- 🌅 背景は最初に配置 -->
+  <div id="bg-sunrise" class="bg show" style="background-image:url('./public/items/bg/sunrise.jpg')"></div>
+  <div id="bg-beach"   class="bg"        style="background-image:url('./public/items/bg/beach_day.jpg')"></div>
+  <div id="bg-night"   class="bg"        style="background-image:url('./public/items/bg/night_beach.jpg')"></div>
 
-  <div id="top">
-    <button id="btnAbout">研究について</button>
-    <button id="btnLang">EN</button>
+  <!-- Topbar -->
+  <div id="topbar">
+    <div class="left"><button id="btnAbout">研究について</button></div>
+    <div class="right"><button id="btnLang">EN</button></div>
   </div>
 
+  <!-- Hero -->
   <div id="hero">
     <h1 id="heroTitle">朝日の海へようこそ</h1>
-    <div class="btns">
-      <a id="btnStart" href="./char.html">スタート</a>
-      <button id="btnContinue">続きから</button>
+    <div class="heroBtns">
+      <button id="btnHeroStart">スタート</button>
+      <button id="btnHeroContinue">続きから</button>
     </div>
   </div>
 
   <script>
-    const L = setLang(getLang());
-    $("#btnAbout").textContent = L.about;
-    $("#heroTitle").textContent = L.hero;
-    $("#btnStart").textContent  = L.start;
-    $("#btnContinue").textContent= L.cont;
-    $("#btnLang").textContent   = nextLangLabel(getLang());
-
-    $("#btnLang").onclick = () => {
-      const cur = getLang();
-      const order = ["ja","en","zh","ko"];
-      const next = order[(order.indexOf(cur)+1)%order.length];
-      const LL = setLang(next);
-      $("#btnAbout").textContent = LL.about;
-      $("#heroTitle").textContent = LL.hero;
-      $("#btnStart").textContent  = LL.start;
-      $("#btnContinue").textContent= LL.cont;
-      $("#btnLang").textContent   = nextLangLabel(next);
-    };
-
-    $("#btnAbout").onclick = () => location.href = "./about.html";
-    $("#btnContinue").onclick = () => {
-      const saved = store.get("whoai.char", null);
-      const last  = store.get("whoai.lastScene", "beach");
-      if (!saved) location.href = "./char.html";
-      else if (last === "night") location.href = "./night.html";
-      else location.href = "./beach.html";
-    };
+    // ✅ 最初は sunrise を表示
+    function scene(name){
+      document.querySelectorAll('.bg').forEach(e=>e.classList.remove('show'));
+      document.getElementById('bg-'+name).classList.add('show');
+    }
+    scene('sunrise');
   </script>
 </body>
 </html>
