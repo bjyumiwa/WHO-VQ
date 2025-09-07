@@ -1,273 +1,64 @@
-
 <!DOCTYPE html>
-<html lang="ja" data-lang="ja">
+<html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-  <title>WHO VQ — 夜の会話</title>
-  <meta name="description" content="WHO VQ の夜会話シーン" />
-  <style>
-    html,body{
-      margin:0;height:100%;overflow:hidden;background:#000;color:#fff;
-      font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans JP",Segoe UI,Roboto,sans-serif
-    }
-    /* 背景 */
-    .bg{position:fixed; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity .6s}
-    .bg.show{opacity:1}
-    #bg-night{ background-image:url("./public/bg/night_beach.jpg"); }
-
-    /* Topbar */
-    #topbar{
-      position:fixed;left:0;right:0;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;
-      padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))
-    }
-    #topbar .left,#topbar .right{display:flex;gap:8px;align-items:center}
-    .btn{padding:8px 12px;border:none;border-radius:12px;background:rgba(255,255,255,.92);color:#111;cursor:pointer;font-weight:700}
-    .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);font-size:12px}
-
-    /* コンテナ */
-    #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:70px 10px 10px}
-    #panel{
-      width:min(96svw,720px); max-height:88vh; display:flex; flex-direction:column; gap:10px;
-      background:rgba(255,255,255,.75); color:#111; border-radius:16px; backdrop-filter:blur(6px); padding:12px
-    }
-    #headerRow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between}
-    #personaRow{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    #personaRow label{display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:10px; cursor:pointer}
-    #nameRow{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
-    #nameInput{flex:1; min-width:180px; padding:8px 10px; border-radius:10px; border:1px solid #ccc}
-    #nameSave{padding:8px 10px; border:none; border-radius:10px; background:#4cafef; color:#fff; cursor:pointer}
-
-    /* チャット */
-    #chatLog{flex:1; background:rgba(242,242,242,.45); padding:10px; border-radius:12px; overflow:auto}
-    .msg{margin:6px 0; padding:8px 12px; border-radius:16px; max-width:70%}
-    .msg.me{background:rgba(174,225,255,.85); color:#002; margin-left:auto}
-    .msg.ai{background:rgba(255,255,255,.9); color:#000; margin-right:auto}
-    #chatCtrl{display:flex; gap:6px}
-    #chatInput{flex:1; padding:10px; border-radius:12px; border:1px solid #ccc}
-    #chatSend{padding:10px 14px; border:none; border-radius:12px; background:#4cafef; color:#fff; cursor:pointer}
-
-    /* whoai（右下, 夜は控えめに） */
-    #whoaiWrap{position:fixed; right:3vw; bottom:8vh; z-index:5; display:none}
-    #whoai{width:clamp(80px,10vw,120px); user-select:none; display:block}
-    #accLayer{position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none}
-
-    /* トースト */
-    #toast{position:fixed; right:10px; top:44px; z-index:20; background:rgba(255,255,255,.92);
-      color:#111; padding:8px 12px; border-radius:10px; font-size:14px; min-width:180px}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>WHO VQ - Night</title>
+<style>
+  html,body{margin:0;height:100%;font-family:system-ui,"Noto Sans JP",sans-serif}
+  #bg{position:fixed;inset:0;background:url('./public/items/bg/night_beach.jpg') center/cover no-repeat;}
+  #shade{position:fixed;inset:0;background:rgba(0,0,0,.55)}
+  #panel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(4px);color:#111;border-radius:14px;padding:16px;width:min(92svw,640px);max-height:90vh;display:flex;flex-direction:column}
+  h2{margin:0 0 8px 0}
+  #chatLog{flex:1;overflow:auto;padding:10px;background:rgba(242,242,242,.4);border-radius:10px}
+  .msg{margin:6px 0;padding:8px 12px;border-radius:16px;max-width:70%}
+  .msg.me{background:rgba(174,225,255,.85);margin-left:auto;color:#002}
+  .msg.ai{background:rgba(255,255,255,.85);margin-right:auto;color:#000}
+  #ctrl{display:flex;gap:6px;margin-top:8px}
+  #input{flex:1;padding:10px;border-radius:12px;border:1px solid #ccc}
+  #send{padding:10px 14px;border:none;border-radius:12px;background:#4cafef;color:#fff;cursor:pointer}
+</style>
 </head>
 <body>
-  <!-- 背景 -->
-  <div id="bg-night" class="bg show" aria-hidden="true"></div>
+  <div id="bg" aria-hidden="true"></div>
+  <div id="shade" aria-hidden="true"></div>
 
-  <!-- Topbar -->
-  <div id="topbar">
-    <div class="left">
-      <button class="btn" id="btnHome">Home</button>
-      <button class="btn" id="btnAbout">研究について</button>
-      <button class="btn" id="btnBeach">砂浜へ</button>
-      <button class="btn" id="btnChar">キャラ変更</button>
-    </div>
-    <div class="right">
-      <span id="conn" class="pill" title="API接続状態">checking…</span>
-      <button class="btn" id="btnLang">EN</button>
+  <div id="panel">
+    <div class="card">
+      <h2>夜の会話</h2>
+      <div id="chatLog"></div>
+      <div id="ctrl">
+        <input id="input" type="text" placeholder="夜空を見ながら、何を話そう？">
+        <button id="send">送信</button>
+      </div>
+      <div style="margin-top:8px"><a href="./index.html">← 戻る</a></div>
     </div>
   </div>
 
-  <!-- whoai（夜も表示） -->
-  <div id="whoaiWrap" aria-live="polite">
-    <img id="whoai" src="" alt="whoai">
-    <div id="accLayer" aria-hidden="true"></div>
-  </div>
-
-  <!-- 会話カード -->
-  <div id="wrap">
-    <div id="panel" role="dialog" aria-labelledby="nightTitle">
-      <div id="headerRow">
-        <h2 id="nightTitle" style="margin:6px 0 0 6px">また明日</h2>
-        <div id="personaRow">
-          <span class="pill" id="personaLabel">会話キャラ</span>
-          <label><input type="radio" name="persona" value="random" checked>ランダム</label>
-          <label><input type="radio" name="persona" value="元気">元気</label>
-          <label><input type="radio" name="persona" value="静寂">静寂</label>
-          <label><input type="radio" name="persona" value="情熱">情熱</label>
-          <label><input type="radio" name="persona" value="創造">創造</label>
-        </div>
-      </div>
-
-      <div id="nameRow">
-        <input id="nameInput" type="text" maxlength="16" placeholder="なまえ（任意）">
-        <button id="nameSave">保存</button>
-        <span id="rareInfo" class="pill" title="集めたレア貝">レア貝 0</span>
-        <span id="displayName" class="pill" title="現在の名前">―</span>
-      </div>
-
-      <div id="chatLog" aria-live="polite"></div>
-
-      <div id="chatCtrl">
-        <input id="chatInput" type="text" placeholder="夜空を見ながら、何を話そう？">
-        <button id="chatSend">送信</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- トースト -->
-  <div id="toast">夜の海。話そうか？</div>
-
-  <!-- 会話APIラッパ -->
-  <script src="./web/talk.js"></script>
-
+  <!-- APIクライアント -->
+  <script src="./talk-client.js"></script>
   <script>
-  /* ===== util & store ===== */
-  const $=(s,p=document)=>p.querySelector(s);
-  const $$=(s,p=document)=>Array.from(p.querySelectorAll(s));
-  const store={ get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}, set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}} };
-  const toast=$('#toast'); const say=(s)=>toast.textContent=s;
+    const log = document.getElementById('chatLog');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
 
-  /* ===== i18n ===== */
-  const I18N={
-    ja:{home:'Home',about:'研究について',beach:'砂浜へ',char:'キャラ変更',langNext:'EN',
-        title:'また明日', guide:'夜の海。話そうか？', placeholder:'夜空を見ながら、何を話そう？', send:'送信',
-        persona:'会話キャラ', random:'ランダム', namePH:'なまえ（任意）', save:'保存',
-        rare:'レア貝', nameNow:'現在の名前', conn_ok:'API接続OK', conn_ng:'API未接続（ローカル応答）'
-    },
-    en:{home:'Home',about:'About',beach:'To Beach',char:'Change Char',langNext:'中文',
-        title:'See you tomorrow', guide:'It\'s night by the sea. Shall we talk?', placeholder:'What shall we talk about under the night sky?', send:'Send',
-        persona:'Persona', random:'Random', namePH:'Name (optional)', save:'Save',
-        rare:'Rare shells', nameNow:'Current name', conn_ok:'API connected', conn_ng:'API offline (local reply)'
-    },
-    zh:{home:'首页',about:'关于研究',beach:'去海滩',char:'换角色',langNext:'한국어',
-        title:'明天见', guide:'夜晚的海边，我们聊聊吧？', placeholder:'在星空下聊些什么？', send:'发送',
-        persona:'会话角色', random:'随机', namePH:'名字（可选）', save:'保存',
-        rare:'稀有贝壳', nameNow:'当前名称', conn_ok:'API已连接', conn_ng:'API未连接（本地回复）'
-    },
-    ko:{home:'홈',about:'연구 소개',beach:'해변으로',char:'캐릭터 변경',langNext:'日本語',
-        title:'내일 또 봐요', guide:'밤바다입니다. 이야기해볼까요?', placeholder:'밤하늘을 보며 무엇을 이야기할까요?', send:'보내기',
-        persona:'페르소나', random:'랜덤', namePH:'이름(선택)', save:'저장',
-        rare:'레어 조개', nameNow:'현재 이름', conn_ok:'API 연결됨', conn_ng:'API 미연결(로컬 응답)'
+    function add(role, text){
+      const d=document.createElement('div');
+      d.className='msg ' + (role==='user'?'me':'ai');
+      d.textContent=text;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
     }
-  };
-  const LANG_ORDER=['ja','en','zh','ko'];
-  const LANG_LABEL={ja:'日本語',en:'EN',zh:'中文',ko:'한국語'};
-  const getLang=()=>localStorage.getItem('who_vq.lang')||'ja';
-  function setLang(lang){
-    const L=I18N[lang]||I18N.ja;
-    document.documentElement.setAttribute('lang',lang);
-    localStorage.setItem('who_vq.lang',lang);
-    $('#btnHome').textContent=L.home; $('#btnAbout').textContent=L.about; $('#btnBeach').textContent=L.beach; $('#btnChar').textContent=L.char;
-    $('#btnLang').textContent=LANG_LABEL[LANG_ORDER[(LANG_ORDER.indexOf(lang)+1)%LANG_ORDER.length]];
-    $('#btnLang').title=`言語を${$('#btnLang').textContent}に切り替え`;
-    $('#nightTitle').textContent=L.title; $('#chatInput').placeholder=L.placeholder; $('#chatSend').textContent=L.send;
-    $('#personaLabel').textContent=L.persona; $$('label[for]').forEach(()=>{}); // no-op
-    $('label input[value="random"]').parentElement.lastChild.nodeValue=L.random;
-    $('#nameInput').placeholder=L.namePH; $('#nameSave').textContent=L.save;
-    $('#rareInfo').title=L.rare; $('#displayName').title=L.nameNow;
-    say(L.guide);
-  }
-  function toggleLang(){ const cur=getLang(); const i=LANG_ORDER.indexOf(cur); setLang(LANG_ORDER[(i+1)%LANG_ORDER.length]); }
 
-  /* ===== character restore / redirect ===== */
-  const whoaiWrap=$('#whoaiWrap'), whoai=$('#whoai'), accLayer=$('#accLayer');
-  const savedChar=store.get('who_vq.char',null);
-  if(!savedChar){ location.href='./char.html'; }
-  else { whoai.src=savedChar; whoaiWrap.style.display='block'; }
-
-  /* ===== name & rare count ===== */
-  const nameInput=$('#nameInput'), nameSave=$('#nameSave'), rareInfo=$('#rareInfo'), dispName=$('#displayName');
-  function getCollection(){return store.get('who_vq.collection',{});}
-  function rareCount(){
-    const RARE=['aurora_shell','rare_pearl','rare_rainbow'];
-    const col=getCollection(); return RARE.reduce((s,k)=>s+(col[k]||0),0);
-  }
-  function refreshNameBar(){
-    rareInfo.textContent = (I18N[getLang()]||I18N.ja).rare+' '+rareCount();
-    const cur=store.get('who_vq.displayName','')||'―'; dispName.textContent=cur;
-  }
-  nameSave.onclick=()=>{
-    const nm=(nameInput.value||'').trim();
-    if(!nm){ store.set('who_vq.displayName',''); refreshNameBar(); return; }
-    // レア貝2個で命名OK（例）
-    if(rareCount()<2){ alert('レア貝が2個必要です'); return; }
-    store.set('who_vq.displayName', nm); refreshNameBar();
-  };
-
-  /* ===== persona ===== */
-  function currentPersona(){
-    const r=document.querySelector('input[name="persona"]:checked');
-    return r ? r.value : 'random';
-  }
-
-  /* ===== acc restore (見た目だけ) ===== */
-  const ACCESSORIES=[ {key:'straw_hat',src:'./public/accessories/straw_hat.png',cls:'straw_hat'},
-                      {key:'knit_hat',src:'./public/accessories/knit_hat.png',cls:'knit_hat'},
-                      {key:'sunglasses',src:'./public/accessories/sunglasses.png',cls:'sunglasses'},
-                      {key:'ribbon_yellow',src:'./public/accessories/ribbon_yellow.png',cls:'ribbon_yellow'},
-                      {key:'star_yellow',src:'./public/accessories/star_yellow.png',cls:'star_yellow'} ];
-  function getActiveAcc(){ return new Set(store.get('who_vq.accessories',[])); }
-  function addAccImg(a){ const old=accLayer.querySelector(`.acc[data-key="${a.key}"]`); if(old) old.remove(); const img=document.createElement('img'); img.src=a.src; img.className='acc '+(a.cls||''); img.dataset.key=a.key; accLayer.appendChild(img); }
-  function restoreAccessories(){ const act=getActiveAcc(); ACCESSORIES.forEach(a=>{ if(act.has(a.key)) addAccImg(a); }); }
-
-  /* ===== chat ===== */
-  const chatLog=$('#chatLog'), chatInput=$('#chatInput'), chatSend=$('#chatSend'), conn=$('#conn');
-  function addMsg(role,text){ const d=document.createElement('div'); d.className='msg '+(role==='user'?'me':'ai'); d.textContent=text; chatLog.appendChild(d); chatLog.scrollTop=chatLog.scrollHeight; }
-
-  async function checkConn(){
-    // 単純な存在確認（talk.jsがあり、関数があればOK扱い）
-    const ok = !!(window.WHOAI_TALK && typeof WHOAI_TALK.talk==='function');
-    const L=I18N[getLang()]||I18N.ja;
-    conn.textContent = ok ? L.conn_ok : L.conn_ng;
-    conn.style.background = ok ? 'rgba(76,175,239,.2)' : 'rgba(255,255,255,.18)';
-    conn.style.borderColor = ok ? 'rgba(76,175,239,.7)' : 'rgba(255,255,255,.3)';
-    return ok;
-  }
-
-  async function sendChat(){
-    const text=(chatInput.value||'').trim(); if(!text) return;
-    addMsg('user', text); chatInput.value='';
-    const L=I18N[getLang()]||I18N.ja;
-    const payload={ state:{ totalCollected: store.get('who_vq.count',0)||0,
-                            displayName: store.get('who_vq.displayName','')||'',
-                            persona: currentPersona() } };
-    try{
-      if(await checkConn()){
-        const {reply} = await WHOAI_TALK.talk(text, payload);
-        addMsg('ai', reply || '…');
-      }else{
-        // ローカルフォールバック
-        const persona=payload.state.persona;
-        const flair = (persona==='元気'?'🔥':persona==='静寂'?'🌙':persona==='情熱'?'💫':persona==='創造'?'🌀':'✨');
-        addMsg('ai', `${flair} （ローカル）${text}。波音が心地いいね。`);
-      }
-    }catch(e){
-      addMsg('ai','（接続できませんでした）'); console.error(e);
-    }
-  }
-
-  chatSend.onclick = sendChat;
-  chatInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendChat(); });
-
-  /* ===== routing ===== */
-  $('#btnHome').onclick = ()=>location.href='./index.html';
-  $('#btnAbout').onclick= ()=>location.href='./about.html';
-  $('#btnBeach').onclick = ()=>{ store.set('who_vq.lastScene','beach'); location.href='./beach.html'; };
-  $('#btnChar').onclick  = ()=>location.href='./char.html';
-  $('#btnLang').onclick  = ()=>{ toggleLang(); checkConn(); };
-
-  /* ===== init ===== */
-  function init(){
-    setLang(getLang());
-    $('#bg-night').classList.add('show');
-    restoreAccessories();
-    refreshNameBar();
-    // 初回の一言
-    const greeted = sessionStorage.getItem('who_vq.nightGreeted');
-    if(!greeted){ addMsg('ai', (I18N[getLang()]||I18N.ja).guide); sessionStorage.setItem('who_vq.nightGreeted','1'); }
-    whoaiWrap.style.display='block';
-    checkConn();
-    store.set('who_vq.lastScene','night');
-  }
-  init();
+    send.onclick = async ()=>{
+      const text = input.value.trim();
+      if(!text) return;
+      add('user', text);
+      input.value='';
+      const { reply } = await window.talkToWhoAI(text, { personality: '元気' });
+      add('ai', reply || '…');
+    };
   </script>
 </body>
 </html>
