@@ -1,19 +1,23 @@
 // /api/talk.js  （Vercel Serverless Function / Node.js）
 export default async function handler(req, res) {
+  // CORS（ローカルテストや他Originから叩くとき用）
   const setCORS = () => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   };
   setCORS();
+
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method === 'GET') return res.status(200).json({ ok: true, endpoint: '/api/talk', expect: 'POST' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
-    if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'OPENAI_API_KEY is not set' });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OPENAI_API_KEY is not set' });
+    }
 
-    // Parse body
+    // 受け取り＆整形
     let body = req.body ?? {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
 
@@ -21,21 +25,15 @@ export default async function handler(req, res) {
     const temperature = typeof body.temperature === 'number' ? body.temperature : 0.7;
     const max_tokens = typeof body.max_tokens === 'number' ? body.max_tokens : 220;
 
-    // 🎯 マカロンの性格に応じた systemPrompt を構成
-    let personality = body.personality || '';
+    // キャラ性格 → systemプロンプト
+    const personality = body.personality || '';
     let systemPrompt = 'あなたは親しみやすいキャラクターです。';
+    if (personality === '情熱') systemPrompt = 'あなたは熱く前向きな口調で、テンション高めに話してください。';
+    else if (personality === '静寂') systemPrompt = 'あなたは落ち着いた静かな口調で、ゆっくり丁寧に話してください。';
+    else if (personality === '元気') systemPrompt = 'あなたは明るく元気なテンションで、テンポよく話してください。';
+    else if (personality === '創造') systemPrompt = 'あなたは創造的で詩的な雰囲気を出して、少し抽象的に語ってください。';
 
-    if (personality === '情熱') {
-      systemPrompt = 'あなたは熱く前向きな口調で、テンション高めに話してください。';
-    } else if (personality === '静寂') {
-      systemPrompt = 'あなたは落ち着いた静かな口調で、ゆっくり丁寧に話してください。';
-    } else if (personality === '元気') {
-      systemPrompt = 'あなたは明るく元気なテンションで、テンポよく話してください。';
-    } else if (personality === '創造') {
-      systemPrompt = 'あなたは創造的で詩的な雰囲気を出して、少し抽象的に語ってください。';
-    }
-
-    // メッセージ構成
+    // messages 構築
     let messages = null;
     if (body.userMessage) {
       const hist = Array.isArray(body.history) ? body.history : [];
