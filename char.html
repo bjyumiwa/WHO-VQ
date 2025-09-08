@@ -1,74 +1,63 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>Choose | WHO VQ</title>
-<style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Noto Sans JP",sans-serif}
-  .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0}
-  .bg.show{opacity:1}
-  #topbar{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
-  #topbar button{padding:6px 10px;border:none;border-radius:10px;background:rgba(255,255,255,.92);color:#111;cursor:pointer}
-  #main{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;background:rgba(0,0,0,.15);padding:20px}
-  #title{font-size:clamp(20px,4vw,32px);text-shadow:0 2px 8px rgba(0,0,0,.45)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;width:min(95svw,800px)}
-  .choice{border:1px solid #eee;border-radius:12px;padding:8px;text-align:center;background:rgba(255,255,255,.9);color:#111;cursor:pointer}
-  .choice img{width:96px;height:auto;display:block;margin:0 auto 6px}
-</style>
+<link rel="preload" href="public/assets/bg_beach_day.jpg" as="image">
+<link rel="stylesheet" href="web/style.css">
+<script defer src="web/talk.js"></script>
 </head>
-<body>
-  <div id="bg-sunrise" class="bg show" style="background-image:url('/WHO-VQ/public/items/bg/sunrise.jpg')"></div>
+<body data-page="char">
+<div class="bg" style="background-image:url('public/assets/bg_beach_day.jpg')"></div>
+<header class="topbar">
+<img src="public/assets/logo_who_vq.png" alt="WHO VQ" class="logo"/>
+<div class="right">
+<select id="langSelect" aria-label="language"></select>
+</div>
+</header>
 
-  <div id="topbar">
-    <div><button id="btnBack">戻る</button></div>
-    <div><button id="btnLang">EN</button></div>
-  </div>
 
-  <div id="main">
-    <div id="title">キャラを選んでね</div>
-    <div id="charGrid" class="grid"></div>
-  </div>
+<main class="center">
+<h1 data-i18n="char_title">キャラを選ぶ</h1>
+<div class="char-grid">
+<button class="card" data-char="pink"><img src="public/assets/character_sample.png" alt="char"/><span>Pink</span></button>
+<button class="card" data-char="blue"><img src="public/assets/character_sample.png" alt="char"/><span>Blue</span></button>
+<button class="card" data-char="green"><img src="public/assets/character_sample.png" alt="char"/><span>Green</span></button>
+<button class="card" data-char="purple"><img src="public/assets/character_sample.png" alt="char"/><span>Purple</span></button>
+</div>
 
-  <script src="/WHO-VQ/web/talk.js"></script>
-  <script>
-    const CHAR_LIST=[
-      'blue_closed.png','green_open.png','orange_closed.png','pink_closed.png','purple_closed.png',
-      'tane_green.png','tane_pink.png','tane_purple.png','tane_blue.png'
-    ].map(n=>`/WHO-VQ/public/assets/stage1/${n}`);
 
-    const grid=document.getElementById('charGrid');
+<div class="name-wrap">
+<label><input type="checkbox" id="chkNoName"> <span data-i18n="no_name">名前を付けない</span></label>
+<input id="inpCharName" class="input" placeholder="キャラの名前" maxlength="20">
+</div>
 
-    function render(){
-      grid.innerHTML='';
-      CHAR_LIST.forEach(src=>{
-        const d=document.createElement('div');
-        d.className='choice';
-        d.innerHTML=`<img src="${src}" alt=""><div>${src.split('/').pop().replace('.png','')}</div>`;
-        d.onclick=()=>{ window.store.rawSet('whoai.char',src); window.store.rawSet('whoai.lastScene','beach'); location.href='/WHO-VQ/beach.html'; };
-        grid.appendChild(d);
-      });
-    }
-    render();
 
-    // 多言語
-    const btnBack=document.getElementById('btnBack');
-    const btnLang=document.getElementById('btnLang');
-    function applyLang(){
-      const lang=window.getLang(); const L=window.setLang(lang);
-      document.getElementById('title').textContent=L.chooseChar;
-      btnBack.textContent=L.back||'Back';
-      btnLang.textContent=window.nextLangLabel(lang);
-      btnLang.title=`言語を${btnLang.textContent}に切り替え`;
-    }
-    btnLang.addEventListener('click',()=>{
-      const lang=window.getLang(); const order=["ja","en","zh","ko"];
-      const next=order[(order.indexOf(lang)+1)%order.length];
-      window.setLang(next); applyLang();
-    });
-    applyLang();
+<div class="buttons">
+<button class="btn primary" id="btnNext" data-i18n="next">次へ</button>
+</div>
+</main>
 
-    btnBack.addEventListener('click',()=>location.href='/WHO-VQ/index.html');
-  </script>
+
+<script>
+let selected = null;
+window.addEventListener('DOMContentLoaded', () => {
+initLang();
+document.querySelectorAll('.card').forEach(b=>{
+b.onclick = ()=>{
+document.querySelectorAll('.card').forEach(x=>x.classList.remove('sel'));
+b.classList.add('sel');
+selected = b.dataset.char;
+};
+});
+const chk = document.getElementById('chkNoName');
+const inp = document.getElementById('inpCharName');
+chk.addEventListener('change', ()=>{ inp.disabled = chk.checked; if(chk.checked){ inp.value=''; } });
+document.getElementById('btnNext').onclick = ()=>{
+if(!selected){ return toast(getText('pick_char_first')); }
+const name = chk.checked ? '' : (inp.value||'');
+localStorage.setItem('who_charColor', selected);
+localStorage.setItem('who_charName', name);
+localStorage.setItem('who_lastPage', 'beach.html');
+location.href = 'beach.html';
+};
+});
+</script>
 </body>
 </html>
