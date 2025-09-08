@@ -3,64 +3,46 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>About | WHO VQ</title>
-<style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Noto Sans JP",sans-serif}
-  .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0}
-  .bg.show{opacity:1}
-  #topbar{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
-  #topbar button{padding:6px 10px;border:none;border-radius:10px;background:rgba(255,255,255,.92);color:#111;cursor:pointer}
-  #main{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:rgba(0,0,0,.15);padding:20px;text-align:center}
-  #main .card{background:rgba(255,255,255,.9);color:#111;max-width:720px;border-radius:14px;padding:20px}
-</style>
+<title>WHO VQ — About</title>
+<link rel="preload" href="public/assets/bg_beach_day.jpg" as="image">
+<link rel="stylesheet" href="web/style.css">
+<script defer src="web/talk.js"></script>
 </head>
-<body>
-  <div id="bg-sunrise" class="bg show" style="background-image:url('/WHO-VQ/public/items/bg/sunrise.jpg')"></div>
+<body data-page="about">
+<div class="bg" style="background-image:url('public/assets/bg_beach_day.jpg')"></div>
+<header class="topbar">
+<img src="public/assets/logo_who_vq.png" alt="WHO VQ" class="logo"/>
+<div class="right">
+<select id="langSelect" aria-label="language"></select>
+</div>
+</header>
 
-  <div id="topbar">
-    <div><button id="btnBack">戻る</button></div>
-    <div><button id="btnLang">EN</button></div>
-  </div>
 
-  <div id="main">
-    <div class="card">
-      <h2 id="title">研究について</h2>
-      <p id="desc">この体験は「朝〜夜の海」をテーマに、観察・収集・会話を通した価値の探索を扱います。</p>
-    </div>
-  </div>
+<main class="paper">
+<h1>研究について</h1>
+<p>
+<strong>WHO VQ</strong> は、ユーザーが小さな存在をお世話しながら、
+「なぜ世話をするのか」「なぜ愛おしいのか」という問いに触れるための
+哲学的な実験場です。<br><br>
+砂浜で拾う貝は関わりの痕跡であり、夜の会話はその痕跡を言葉に変える時間です。<br>
+あなたのお世話が、誰かの世界になる——その意味を感じてください。
+</p>
+<h2>ゲームの流れ</h2>
+<ol>
+<li>キャラを選ぶ（名前は任意）</li>
+<li>砂浜で貝を集める（存在の痕跡を残す）</li>
+<li>夜の会話でふりかえり（お世話の意味を考える）</li>
+</ol>
+<div class="buttons">
+<button class="btn" onclick="history.back()">戻る</button>
+</div>
+</main>
 
-  <script src="/WHO-VQ/web/talk.js"></script>
-  <script>
-    function scene(){/* 固定でsunrise */} scene();
 
-    const btnBack=document.getElementById('btnBack');
-    const btnLang=document.getElementById('btnLang');
-
-    function applyLang(){
-      const lang=window.getLang();
-      const L=window.setLang(lang);
-      document.getElementById('title').textContent=L.about;
-      document.getElementById('desc').textContent = (lang==='ja')
-        ? 'この体験は「朝〜夜の海」をテーマに、観察・収集・会話を通した価値の探索を扱います。'
-        : (lang==='en')
-          ? 'This experience explores value through observing, collecting, and talking by the sea from sunrise to night.'
-          : (lang==='zh')
-            ? '这个体验以“从清晨到夜晚的海”为主题，通过观察、收集和对话来探索价值。'
-            : '이 체험은 “아침부터 밤까지의 바다”를 주제로 관찰, 수집, 대화를 통해 가치를 탐구합니다.';
-      btnBack.textContent = L.back || 'Back';
-      btnLang.textContent = window.nextLangLabel(lang);
-      btnLang.title = `言語を${btnLang.textContent}に切り替え`;
-    }
-    btnLang.addEventListener('click',()=>{
-      const lang=window.getLang();
-      const order=["ja","en","zh","ko"];
-      const next=order[(order.indexOf(lang)+1)%order.length];
-      window.setLang(next);
-      applyLang();
-    });
-    applyLang();
-
-    btnBack.addEventListener('click',()=>location.href='/WHO-VQ/index.html');
-  </script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+initLang();
+});
+</script>
 </body>
 </html>
