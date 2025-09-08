@@ -1,53 +1,31 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-  <title>WHO VQ</title>
-  <style>
-    html,body{
-      margin:0; height:100%; overflow:hidden; background:#000; color:#fff;
-      font-family:system-ui,"Noto Sans JP",sans-serif; touch-action:none; overscroll-behavior:none;
-    }
-    .bg{
-      position:fixed; inset:0; background-size:cover; background-position:center;
-      opacity:0; transition:opacity .7s; pointer-events:none; z-index:0;
-    }
-    .bg.show{ opacity:1; }
-
-    #topbar{
-      position:fixed; left:0; right:0; top:0; z-index:10;
-      display:flex; justify-content:space-between; align-items:center;
-      padding:8px 10px;
-      background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));
-    }
-    #topbar button{
-      padding:6px 10px; border:none; border-radius:10px;
-      background:rgba(255,255,255,.92); color:#111; cursor:pointer;
-    }
-
-    #hero{
-      position:fixed; inset:0; z-index:5; display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:18px; text-align:center;
-      background:rgba(0,0,0,.15);
-    }
-    #hero h1{ font-size:clamp(20px,4vw,36px); margin:0 16px; }
-    .heroBtns{ display:flex; gap:12px; }
-    .heroBtns button{
-      padding:12px 18px; border:none; border-radius:12px; cursor:pointer; font-weight:700;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<title>WHO VQ</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Noto Sans JP",sans-serif}
+  .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0}
+  .bg.show{opacity:1}
+  #topbar{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
+  #topbar button{padding:6px 10px;border:none;border-radius:10px;background:rgba(255,255,255,.92);color:#111;cursor:pointer}
+  #hero{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;background:rgba(0,0,0,.15)}
+  #hero h1{font-size:clamp(20px,4vw,36px);margin:0 16px}
+  .heroBtns{display:flex;gap:12px}
+  .heroBtns button{padding:12px 18px;border:none;border-radius:12px;cursor:pointer;font-weight:700}
+</style>
 </head>
 <body>
   <!-- 背景 -->
-  <div id="bg-sunrise" class="bg show" style="background-image:url('./public/items/bg/sunrise.jpg')"></div>
-  <div id="bg-beach"   class="bg"        style="background-image:url('./public/items/bg/beach_day.jpg')"></div>
-  <div id="bg-night"   class="bg"        style="background-image:url('./public/items/bg/night_beach.jpg')"></div>
+  <div id="bg-sunrise" class="bg show" style="background-image:url('/WHO-VQ/public/items/bg/sunrise.jpg')"></div>
+  <div id="bg-beach"   class="bg"        style="background-image:url('/WHO-VQ/public/items/bg/beach_day.jpg')"></div>
+  <div id="bg-night"   class="bg"        style="background-image:url('/WHO-VQ/public/items/bg/night_beach.jpg')"></div>
 
   <!-- Topbar -->
   <div id="topbar">
-    <div class="left"><button id="btnAbout">研究について</button></div>
-    <div class="right"><button id="btnLang">EN</button></div>
+    <div><button id="btnAbout">研究について</button></div>
+    <div><button id="btnLang">EN</button></div>
   </div>
 
   <!-- Hero -->
@@ -59,75 +37,54 @@
     </div>
   </div>
 
-  <!-- ここから：DOM生成後に実行するJS -->
+  <!-- 共通JS -->
+  <script src="/WHO-VQ/web/talk.js"></script>
   <script>
-  (function(){
-    // 背景切替
+    // 背景初期
     function scene(name){
       document.querySelectorAll('.bg').forEach(e=>e.classList.remove('show'));
-      const el = document.getElementById('bg-'+name);
-      if (el) el.classList.add('show');
+      const el=document.getElementById('bg-'+name);
+      if(el) el.classList.add('show');
     }
     scene('sunrise');
 
-    // 要素
-    const btnStart = document.getElementById('btnHeroStart');
-    const btnCont  = document.getElementById('btnHeroContinue');
-    const btnAbout = document.getElementById('btnAbout');
-    const btnLang  = document.getElementById('btnLang');
+    // 多言語
+    const btnStart=document.getElementById('btnHeroStart');
+    const btnCont =document.getElementById('btnHeroContinue');
+    const btnAbout=document.getElementById('btnAbout');
+    const btnLang =document.getElementById('btnLang');
 
-    // 続きからの活性制御
-    const hasSave = !!localStorage.getItem('whoai.char');
-    btnCont.disabled = !hasSave;
-    btnCont.style.opacity = hasSave ? '1' : '.5';
+    function applyLang(){
+      const lang=window.getLang();
+      const L=window.setLang(lang);
+      document.getElementById('heroTitle').textContent=L.hero;
+      btnStart.textContent=L.start;
+      btnCont.textContent=L.cont;
+      btnAbout.textContent=L.about;
+      // 次に切り替わる言語
+      btnLang.textContent = window.nextLangLabel(lang);
+      btnLang.title = `言語を${btnLang.textContent}に切り替え`;
+    }
+    btnLang.addEventListener('click',()=>{
+      const lang=window.getLang();
+      const order=["ja","en","zh","ko"];
+      const next=order[(order.indexOf(lang)+1)%order.length];
+      window.setLang(next);
+      applyLang();
+    });
+    applyLang();
+
+    // 続きから活性
+    const hasSave = !!window.store.rawGet('whoai.char');
+    btnCont.disabled=!hasSave; btnCont.style.opacity=hasSave?'1':'.5';
 
     // 画面遷移
-    btnStart.addEventListener('click', () => {
-      location.href = 'char.html';
+    btnStart.addEventListener('click',()=>location.href='/WHO-VQ/char.html');
+    btnCont.addEventListener('click',()=>{
+      const last = window.store.rawGet('whoai.lastScene') || 'beach';
+      location.href = (last==='night')? '/WHO-VQ/night.html' : '/WHO-VQ/beach.html';
     });
-
-    btnCont.addEventListener('click', () => {
-      const savedChar = localStorage.getItem('whoai.char');
-      if (!savedChar) {
-        location.href = 'char.html';
-        return;
-      }
-      let last = 'beach';
-      try { last = JSON.parse(localStorage.getItem('whoai.lastScene')) || 'beach'; } catch {}
-      location.href = (last === 'night') ? 'night.html' : 'beach.html';
-    });
-
-    btnAbout.addEventListener('click', () => {
-      location.href = 'about.html';
-    });
-
-    // 簡易 多言語（必要なら web/talk.js の I18N と統合可能）
-    const LANG_ORDER = ['ja','en','zh','ko'];
-    const LANG_LABEL = { ja:'日本語', en:'EN', zh:'中文', ko:'한국어' };
-    function getLang(){ return localStorage.getItem('whoai.lang') || 'ja'; }
-    function setLang(lang){
-      localStorage.setItem('whoai.lang', lang);
-      document.documentElement.setAttribute('lang', lang);
-      const L = (window.I18N && window.I18N[lang]) ? window.I18N[lang] : null;
-      if (L) {
-        document.getElementById('heroTitle').textContent = L.hero || 'Welcome';
-        btnStart.textContent = L.start || 'Start';
-        btnCont.textContent  = L.cont || 'Continue';
-        btnAbout.textContent = L.about || 'About';
-      }
-      const idx = LANG_ORDER.indexOf(lang);
-      const next = LANG_ORDER[(idx+1)%LANG_ORDER.length];
-      btnLang.textContent = LANG_LABEL[next];
-      btnLang.title = `言語を${LANG_LABEL[next]}に切り替え`;
-    }
-    btnLang.addEventListener('click', () => {
-      const cur  = getLang();
-      const idx  = LANG_ORDER.indexOf(cur);
-      const next = LANG_ORDER[(idx+1)%LANG_ORDER.length];
-      setLang(next);
-    });
-    setLang(getLang());
-  })();
+    btnAbout.addEventListener('click',()=>location.href='/WHO-VQ/about.html');
   </script>
 </body>
 </html>
