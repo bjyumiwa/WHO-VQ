@@ -1,8 +1,9 @@
-// /who-vq/web/talk.js
-// <script>タグで書かず、ファイルそのものにこの内容だけ。HTMLは <script src="./web/talk.js"></script> で読み込み。
+<!-- /WHO-VQ/web/talk.js -->
+<script>
 (() => {
-  // ここをあなたのデプロイURLに置き換え
-  const ENDPOINT = "https://YOUR-PROJECT.vercel.app/api/talk";
+  // ★ 会話APIのURL（まだない場合は空のままでOK）
+  // 例: "https://your-vercel-app.vercel.app/api/talk"
+  const ENDPOINT = "";
 
   async function talk(userMessage, opts = {}) {
     const payload = {
@@ -13,6 +14,13 @@
       temperature: 0.7,
       max_tokens: 220,
     };
+
+    // ENDPOINTが未設定なら、ローカルの仮返信
+    if (!ENDPOINT) {
+      console.warn("[WHOAI_TALK] ENDPOINT が設定されていません。ローカル返信を返します。");
+      return `（ローカル応答）${userMessage}`;
+    }
+
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
@@ -28,43 +36,89 @@
     }
   }
 
-  // 共有: i18n/ストレージ/DOMヘルパ
+  // 共通：多言語テキスト
   const I18N = {
-    ja:{about:"研究について",start:"スタート",cont:"続きから",langNext:"EN",hero:"朝日の海へようこそ",
-        toNight:"夜へ",accessory:"アクセサリー",collection:"コレクション",reset:"リセット",
-        nightTitle:"また明日",nightPH:"夜空を見ながら、何を話そう？",send:"送信",close:"閉じる",
-        sunriseToast:"朝日がきれいだね",beachGuide:"砂の中に貝があるよ。なでて探してね",nightGuide:"夜の海。話そうか？",
-        chooseChar:"キャラを選んでね"},
-    en:{about:"About this research",start:"Start",cont:"Continue",langNext:"中文",hero:"Welcome to the Sunrise Shore",
-        toNight:"To Night",accessory:"Accessories",collection:"Collection",reset:"Reset",
-        nightTitle:"See you tomorrow",nightPH:"What shall we talk about under the night sky?",
-        send:"Send",close:"Close",sunriseToast:"Beautiful sunrise",
-        beachGuide:"Shells hide in the sand. Swipe to find them.",nightGuide:"It's night by the sea. Shall we talk?",
-        chooseChar:"Choose your character"},
-    zh:{about:"关于研究",start:"开始",cont:"继续",langNext:"한국어",hero:"欢迎来到朝阳海岸",
-        toNight:"进入夜晚",accessory:"饰品",collection:"收藏",reset:"重置",nightTitle:"明天见",
-        nightPH:"在星空下我们聊些什么？",send:"发送",close:"关闭",sunriseToast:"美丽的朝阳",
-        beachGuide:"贝壳藏在沙子里，滑动寻找它们。",nightGuide:"夜晚的海边，我们聊聊吧？",chooseChar:"选择角色"},
-    ko:{about:"연구에 대하여",start:"시작",cont:"계속",langNext:"日本語",hero:"아침 해변에 오신 것을 환영합니다",
-        toNight:"밤으로",accessory:"액세서리",collection:"컬렉션",reset:"리셋",nightTitle:"내일 또 봐요",
-        nightPH:"밤하늘을 보며 무엇을 이야기할까요?",send:"보내기",close:"닫기",sunriseToast:"아름다운 아침 해",
-        beachGuide:"조개는 모래 속에 숨어있어요. 쓸어보세요.",nightGuide:"밤바다입니다. 이야기해볼까요?",chooseChar:"캐릭터를 선택하세요"},
+    ja: {
+      about:"研究について", start:"スタート", cont:"続きから", langNext:"EN",
+      hero:"朝日の海へようこそ", toNight:"夜へ", accessory:"アクセサリー",
+      collection:"コレクション", reset:"リセット",
+      nightTitle:"また明日", nightPH:"夜空を見ながら、何を話そう？",
+      send:"送信", close:"閉じる",
+      sunriseToast:"朝日がきれいだね",
+      beachGuide:"砂の中に貝があるよ。なでて探してね",
+      nightGuide:"夜の海。話そうか？",
+      chooseChar:"キャラを選んでね",
+      back:"戻る",
+      select:"選択",
+      cooking:"料理",
+    },
+    en: {
+      about:"About this research", start:"Start", cont:"Continue", langNext:"中文",
+      hero:"Welcome to the Sunrise Shore", toNight:"To Night", accessory:"Accessories",
+      collection:"Collection", reset:"Reset",
+      nightTitle:"See you tomorrow", nightPH:"What shall we talk about under the night sky?",
+      send:"Send", close:"Close",
+      sunriseToast:"Beautiful sunrise",
+      beachGuide:"Shells hide in the sand. Swipe to find them.",
+      nightGuide:"It's night by the sea. Shall we talk?",
+      chooseChar:"Choose your character",
+      back:"Back",
+      select:"Select",
+      cooking:"Cooking",
+    },
+    zh: {
+      about:"关于研究", start:"开始", cont:"继续", langNext:"한국어",
+      hero:"欢迎来到朝阳海岸", toNight:"进入夜晚", accessory:"饰品",
+      collection:"收藏", reset:"重置",
+      nightTitle:"明天见", nightPH:"在星空下我们聊些什么？", send:"发送", close:"关闭",
+      sunriseToast:"美丽的朝阳",
+      beachGuide:"贝壳藏在沙子里，滑动寻找它们。",
+      nightGuide:"夜晚的海边，我们聊聊吧？",
+      chooseChar:"选择角色",
+      back:"返回",
+      select:"选择",
+      cooking:"料理",
+    },
+    ko: {
+      about:"연구에 대하여", start:"시작", cont:"계속", langNext:"日本語",
+      hero:"아침 해변에 오신 것을 환영합니다", toNight:"밤으로", accessory:"액세서리",
+      collection:"컬렉션", reset:"리셋",
+      nightTitle:"내일 또 봐요", nightPH:"밤하늘을 보며 무엇을 이야기할까요?", send:"보내기", close:"닫기",
+      sunriseToast:"아름다운 아침 해",
+      beachGuide:"조개는 모래 속에 숨어있어요. 쓸어보세요.",
+      nightGuide:"밤바다입니다. 이야기해볼까요?",
+      chooseChar:"캐릭터를 선택하세요",
+      back:"뒤로",
+      select:"선택",
+      cooking:"요리",
+    },
   };
   const LANG_ORDER = ["ja","en","zh","ko"];
   const LANG_LABEL = { ja:"日本語", en:"EN", zh:"中文", ko:"한국어" };
-  function getLang(){ return localStorage.getItem("whoai.lang") || "ja"; }
-  function nextLangLabel(lang){ const i=LANG_ORDER.indexOf(lang); return {ja:"日本語",en:"EN",zh:"中文",ko:"한국어"}[LANG_ORDER[(i+1)%LANG_ORDER.length]]; }
-  function setLang(lang){ localStorage.setItem("whoai.lang",lang); document.documentElement.setAttribute("lang",lang); return I18N[lang]||I18N.ja; }
 
+  function getLang(){ return localStorage.getItem("whoai.lang") || "ja"; }
+  function setLang(lang){
+    localStorage.setItem("whoai.lang", lang);
+    document.documentElement.setAttribute("lang", lang);
+    return I18N[lang] || I18N.ja;
+  }
+  function nextLangLabel(lang){
+    const idx = LANG_ORDER.indexOf(lang);
+    const next = LANG_ORDER[(idx+1)%LANG_ORDER.length];
+    return LANG_LABEL[next];
+  }
+
+  // 共有：ストレージ & DOM
   const store = {
-    get:(k,d)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):d;}catch{return d;} },
-    set:(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v));}catch{} },
-    remove:(k)=>{ try{localStorage.removeItem(k);}catch{} },
+    get:(k,d)=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch{ return d; } },
+    set:(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} },
+    rawGet:(k)=>localStorage.getItem(k),
+    rawSet:(k,v)=>localStorage.setItem(k,v),
   };
   const $  = (s,p=document)=>p.querySelector(s);
   const $$ = (s,p=document)=>Array.from(p.querySelectorAll(s));
 
-  // 公開（他のページから使う）
+  // 公開
   window.WHOAI_TALK = { talk };
   window.I18N = I18N;
   window.getLang = getLang;
@@ -74,3 +128,4 @@
   window.$ = $;
   window.$$ = $$;
 })();
+</script>
