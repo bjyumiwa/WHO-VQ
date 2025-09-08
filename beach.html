@@ -1,313 +1,65 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>Beach | WHO VQ</title>
-<style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Noto Sans JP",sans-serif}
-  .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0}
-  .bg.show{opacity:1}
-  #topbar{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
-  #topbar button{padding:6px 10px;border:none;border-radius:10px;background:rgba(255,255,255,.92);color:#111;cursor:pointer}
-  #toast{position:fixed;right:10px;top:42px;z-index:15;background:rgba(255,255,255,.92);color:#111;padding:8px 12px;border-radius:10px;font-size:14px;min-width:180px}
-  #whoaiWrap{position:fixed;left:10vw;bottom:12vh;z-index:6;display:block;transition:left 4s ease,bottom 4s ease}
-  #whoai{width:clamp(80px,12vw,140px);display:block;user-select:none}
-  #accLayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-  .acc{position:absolute;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:2}
-  .acc.straw_hat{top:12%;width:60%}
-  .acc.knit_hat{top:14%;width:58%}
-  .acc.sunglasses{top:42%;width:56%}
-  .acc.ribbon_yellow{top:20%;left:60%;width:42%}
-  .acc.star_yellow{top:23%;left:65%;width:40%}
-  #bucket{position:fixed;right:2vw;bottom:7vh;z-index:5;width:clamp(74px,14vw,160px)}
-  #bucket img{width:100%;display:block}
-  #counter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.9);color:#111;border-radius:999px;padding:4px 8px;font-weight:600}
-  #sand{position:fixed;inset:0;z-index:2;touch-action:none}
-  .shell{position:fixed;z-index:3;width:clamp(48px,6vw,72px);height:clamp(48px,6vw,72px);transform:translate(-50%,-50%);background-size:contain;background-repeat:no-repeat;background-position:center;cursor:grab;opacity:0;transition:opacity .18s, transform .18s}
-  .shell.show{opacity:1}
-  .shell.drag{transform:translate(-50%,-50%) scale(1.04)}
-  .ui{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:8px;z-index:10;flex-wrap:wrap;justify-content:center}
-  .ui button{padding:8px 14px;border:none;border-radius:10px;cursor:pointer}
-  .panel{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
-  .panel.show{display:flex}
-  .card{background:#fff;color:#111;border-radius:14px;padding:16px;width:min(92svw,720px)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}
-</style>
-</head>
-<body>
-  <div id="bg-beach" class="bg show" style="background-image:url('/WHO-VQ/public/items/bg/beach_day.jpg')"></div>
+hudCount.textContent = collected.length;
+spawnParticles(x,y,s.type.color);
+shells.splice(i,1);
+break;
+}
+}
+if(shells.length===0){ spawn(24); }
+});
 
-  <div id="topbar">
-    <div><button id="btnBack">戻る</button></div>
-    <div><button id="btnLang">EN</button></div>
-  </div>
 
-  <div id="toast">砂の中に貝があるよ。なでて探してね</div>
+function spawnParticles(x,y,color){
+for(let i=0;i<12;i++){
+particles.push({x,y,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,life:30,color});
+}
+}
 
-  <!-- キャラ -->
-  <div id="whoaiWrap">
-    <img id="whoai" src="" alt="whoai">
-    <div id="accLayer" aria-hidden="true"></div>
-  </div>
 
-  <!-- バケツ -->
-  <div id="bucket">
-    <img src="/WHO-VQ/public/bucket.png.png" alt="bucket">
-    <div id="counter">0</div>
-  </div>
+function draw(){
+ctx.clearRect(0,0,cv.width,cv.height);
+// 砂のザラつき
+for(let i=0;i<60;i++){
+ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.02})`;
+ctx.fillRect(Math.random()*cv.width, Math.random()*cv.height, 2, 2);
+}
+// テキストガイド
+if(!playing){ ctx.font='16px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(getText('tap_to_collect'), 20, 30); }
+// 貝
+for(const s of shells){
+ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+ctx.fillStyle=s.type.color; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.stroke();
+}
+// パーティクル
+for(const p of particles){
+ctx.globalAlpha = Math.max(p.life/30, 0);
+ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
+ctx.globalAlpha = 1;
+}
+}
 
-  <!-- 砂 -->
-  <canvas id="sand"></canvas>
 
-  <!-- フッターUI -->
-  <div class="ui" id="gameUi">
-    <button id="btnNight">夜へ</button>
-    <button id="btnAccessory">アクセサリー</button>
-    <button id="btnCollection">コレクション</button>
-    <button id="btnReset">リセット</button>
-  </div>
+function update(){
+// タイマー
+if(playing){
+timer -= 1/60; if(timer<=0){ timer=0; end(); }
+hudTime.textContent = Math.ceil(timer).toString();
+}
+// パーティクル更新
+particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.01; p.life--; });
+particles = particles.filter(p=>p.life>0);
+}
 
-  <!-- パネル：アクセサリー -->
-  <div id="accessoryPanel" class="panel" aria-hidden="true">
-    <div class="card">
-      <h2 id="accTitle">アクセサリー</h2>
-      <div id="accList" class="grid"></div>
-      <div style="text-align:right;margin-top:8px"><button id="accClose">閉じる</button></div>
-    </div>
-  </div>
 
-  <!-- パネル：コレクション -->
-  <div id="collectionPanel" class="panel" aria-hidden="true">
-    <div class="card">
-      <h2 id="colTitle">コレクション</h2>
-      <div id="collectionSummary" style="margin:6px 0 12px;color:#333"></div>
-      <h3 id="colCommonTitle">よくある貝</h3>
-      <div id="colCommon" class="grid" style="margin-bottom:12px"></div>
-      <h3 id="colRareTitle">レア</h3>
-      <div id="colRare" class="grid"></div>
-      <div style="text-align:right;margin-top:8px"><button id="colClose">閉じる</button></div>
-    </div>
-  </div>
+function loop(){
+update(); draw();
+tickHandle = requestAnimationFrame(loop);
+}
 
-  <script src="/WHO-VQ/web/talk.js"></script>
-  <script>
-    // 言語UI
-    const btnBack=document.getElementById('btnBack');
-    const btnLang=document.getElementById('btnLang');
-    const toast=document.getElementById('toast');
-    function applyLang(){
-      const lang=window.getLang(); const L=window.setLang(lang);
-      toast.textContent=L.beachGuide;
-      btnBack.textContent=L.back||'Back';
-      btnLang.textContent=window.nextLangLabel(lang);
-      btnLang.title=`言語を${btnLang.textContent}に切り替え`;
-      document.getElementById('btnNight').textContent=L.toNight;
-      document.getElementById('btnAccessory').textContent=L.accessory;
-      document.getElementById('btnCollection').textContent=L.collection;
-      document.getElementById('btnReset').textContent=L.reset;
-      document.getElementById('accTitle').textContent=L.accessory;
-      document.getElementById('colTitle').textContent=L.collection;
-      document.getElementById('colCommonTitle').textContent=L.collection? (L.collection && (window.getLang()==='ja'?'よくある貝':'Common Shells')):'Common Shells';
-      document.getElementById('colRareTitle').textContent=(window.getLang()==='ja'?'レア':'Rare');
-      document.getElementById('accClose').textContent=L.close;
-      document.getElementById('colClose').textContent=L.close;
-    }
-    btnLang.addEventListener('click',()=>{
-      const lang=window.getLang(); const order=["ja","en","zh","ko"];
-      const next=order[(order.indexOf(lang)+1)%order.length];
-      window.setLang(next); applyLang();
-    });
-    applyLang();
 
-    btnBack.addEventListener('click',()=>location.href='/WHO-VQ/index.html');
-
-    // キャラ復元
-    const whoai=document.getElementById('whoai');
-    const charSrc = window.store.rawGet('whoai.char');
-    if(charSrc) whoai.src = charSrc;
-
-    // wander
-    setInterval(()=>{
-      const wrap=document.getElementById('whoaiWrap');
-      wrap.style.left=(8+Math.random()*72)+'vw';
-      wrap.style.bottom=(10+Math.random()*60)+'vh';
-    },5000);
-
-    // 砂
-    const sand=document.getElementById('sand'); const ctx=sand.getContext('2d',{willReadFrequently:true});
-    function resizeSand(){
-      sand.width=innerWidth; sand.height=innerHeight;
-      const g=ctx.createLinearGradient(0,0,0,sand.height); g.addColorStop(0,'#e7d9b7'); g.addColorStop(1,'#c8b68f');
-      ctx.fillStyle=g; ctx.fillRect(0,0,sand.width,sand.height);
-      ctx.globalAlpha=.12;
-      for(let i=0;i<800;i++){
-        const x=Math.random()*sand.width,y=Math.random()*sand.height;
-        ctx.fillStyle=(i%3===0)?'#bfae82':'#d2c29a';
-        ctx.beginPath(); ctx.arc(x,y,Math.random()*1.2+.2,0,Math.PI*2); ctx.fill();
-      }
-      ctx.globalAlpha=1;
-    }
-    const BRUSH=30;
-    function brushAt(x,y){
-      ctx.globalCompositeOperation='destination-out'; ctx.globalAlpha=.35;
-      ctx.beginPath(); ctx.arc(x,y,BRUSH,0,Math.PI*2); ctx.fill();
-      ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
-      maybeSpawnNear(x,y);
-    }
-    sand.addEventListener('pointerdown',e=>brushAt(e.clientX,e.clientY),{passive:false});
-    sand.addEventListener('pointermove',e=>{ if(e.buttons) brushAt(e.clientX,e.clientY); },{passive:false});
-    addEventListener('resize',resizeSand); resizeSand();
-
-    // 貝
-    const COMMON=['/WHO-VQ/public/items/asari1.png','/WHO-VQ/public/items/asari2.png','/WHO-VQ/public/items/asari3.png'];
-    const RARE  =['/WHO-VQ/public/items/aurora_shell.png','/WHO-VQ/public/items/rare_pearl.png','/WHO-VQ/public/items/rare_rainbow.png'];
-
-    const bucket=document.getElementById('bucket');
-    const counter=document.getElementById('counter');
-
-    let count=Number(window.store.rawGet('whoai.count')||'0')||0; counter.textContent=count;
-    let spawnedTotal=Number(window.store.rawGet('whoai.spawned')||'0')||0;
-    const shells=[]; const MAX_SHELLS=8, TOTAL_SPAWN_LIMIT=20, MIN_DIST=90, SPAWN_P=.18;
-
-    function tooClose(x,y){ return shells.some(s=>Math.hypot(s.x-x,s.y-y)<MIN_DIST); }
-    function avoidBucket(x,y){ const b=bucket.getBoundingClientRect(); const cx=(b.left+b.right)/2,cy=(b.top+b.bottom)/2; return Math.hypot(cx-x,cy-y)<120; }
-
-    function maybeSpawnNear(x,y){
-      if(shells.length>=MAX_SHELLS||spawnedTotal>=TOTAL_SPAWN_LIMIT||Math.random()>SPAWN_P) return;
-      let px=x+(Math.random()*2-1)*90, py=y+(Math.random()*2-1)*90;
-      px=Math.max(60,Math.min(innerWidth-60,px)); py=Math.max(100,Math.min(innerHeight-100,py));
-      if(tooClose(px,py)||avoidBucket(px,py)) return;
-      const rare=Math.random()<.18; const src=(rare?RARE:COMMON)[Math.floor(Math.random()*(rare?RARE.length:COMMON.length))];
-      const el=document.createElement('div'); el.className='shell'; el.style.left=px+'px'; el.style.top=py+'px'; el.style.backgroundImage=`url(${src})`;
-      document.body.appendChild(el); requestAnimationFrame(()=>el.classList.add('show'));
-      enableDrag(el,src); shells.push({el,x:px,y:py,src}); spawnedTotal++; window.store.rawSet('whoai.spawned',String(spawnedTotal));
-    }
-
-    function enableDrag(el,src){
-      let pid=null,dx=0,dy=0;
-      el.addEventListener('pointerdown',e=>{e.preventDefault(); pid=e.pointerId; el.setPointerCapture(pid); dx=e.clientX-parseFloat(el.style.left); dy=e.clientY-parseFloat(el.style.top); el.classList.add('drag');},{passive:false});
-      el.addEventListener('pointermove',e=>{ if(e.pointerId!==pid)return; e.preventDefault(); el.style.left=(e.clientX-dx)+'px'; el.style.top=(e.clientY-dy)+'px';},{passive:false});
-      function finish(e){
-        if(e.pointerId!==pid)return; e.preventDefault(); el.classList.remove('drag'); el.releasePointerCapture(pid); pid=null;
-        const b=bucket.getBoundingClientRect(), s=el.getBoundingClientRect();
-        const hit=!(s.right<b.left||s.left>b.right||s.bottom<b.top||s.top>b.bottom);
-        if(hit){
-          el.remove(); const i=shells.findIndex(o=>o.el===el); if(i>-1) shells.splice(i,1);
-          counter.textContent=++count; window.store.rawSet('whoai.count',String(count));
-          const key=src.split('/').pop().replace('.png','');
-          const col=window.store.get('whoai.collection',{}); col[key]=(col[key]||0)+1; window.store.set('whoai.collection',col);
-          refreshCollectionView(); refreshAccessoryLocks();
-        }
-      }
-      el.addEventListener('pointerup',finish,{passive:false}); el.addEventListener('pointercancel',finish,{passive:false});
-    }
-
-    // コレクション/アクセサリー
-    const collectionPanel=document.getElementById('collectionPanel');
-    const colCommon=document.getElementById('colCommon');
-    const colRare=document.getElementById('colRare');
-    const collectionSummary=document.getElementById('collectionSummary');
-
-    const ALL_ITEMS=[...COMMON,...RARE].map(src=>({key:src.split('/').pop().replace('.png',''),src}));
-
-    function buildCollectionGrid(){
-      const make=(src)=>{
-        const key=src.split('/').pop().replace('.png','');
-        const slot=document.createElement('div');
-        slot.innerHTML=`<div style="background-image:url(${src});width:80px;height:80px;background-size:contain;background-repeat:no-repeat;background-position:center;margin:auto"></div>
-        <div style="text-align:center">${key}</div>
-        <div style="text-align:center">×<span data-key="${key}">0</span></div>`;
-        return slot;
-      };
-      colCommon.innerHTML=''; COMMON.forEach(s=>colCommon.appendChild(make(s)));
-      colRare.innerHTML='';   RARE.forEach(s=>colRare.appendChild(make(s)));
-      colCommon.dataset.ready='1'; colRare.dataset.ready='1';
-    }
-    function refreshCollectionView(){
-      const col=window.store.get('whoai.collection',{});
-      const totalKinds=ALL_ITEMS.length;
-      const ownedKinds=ALL_ITEMS.filter(x=>(col[x.key]||0)>0).length;
-      const total=Object.values(col).reduce((a,b)=>a+b,0);
-      collectionSummary.textContent=`入手種: ${ownedKinds}/${totalKinds}　総数: ${total}　コンプ率: ${Math.round(ownedKinds/totalKinds*100)}%`;
-      document.querySelectorAll('#collectionPanel span[data-key]').forEach(span=>{
-        const key=span.getAttribute('data-key'); span.textContent=col[key]||0;
-      });
-    }
-    function openCollection(){ if(!colCommon.dataset.ready) buildCollectionGrid(); refreshCollectionView(); openPanel(collectionPanel); }
-    document.getElementById('colClose').onclick=()=>closePanel(collectionPanel);
-
-    const accessoryPanel=document.getElementById('accessoryPanel');
-    const accList=document.getElementById('accList'); document.getElementById('accClose').onclick=()=>closePanel(accessoryPanel);
-    const accLayer=document.getElementById('accLayer');
-    const ACCESSORIES=[
-      {key:'straw_hat',name:'麦わら帽子',src:'/WHO-VQ/public/accessories/straw_hat.png',cls:'straw_hat',unlockAt:3},
-      {key:'knit_hat',name:'毛糸の帽子',src:'/WHO-VQ/public/accessories/knit_hat.png',cls:'knit_hat',unlockAt:6},
-      {key:'sunglasses',name:'サングラス',src:'/WHO-VQ/public/accessories/sunglasses.png',cls:'sunglasses',unlockAt:10},
-      {key:'ribbon_yellow',name:'黄色いリボン',src:'/WHO-VQ/public/accessories/ribbon_yellow.png',cls:'ribbon_yellow',unlockAt:15},
-      {key:'star_yellow',name:'黄色のスター',src:'/WHO-VQ/public/accessories/star_yellow.png',cls:'star_yellow',unlockAt:20},
-    ];
-    function getActiveAcc(){return new Set(window.store.get('whoai.accessories',[]));}
-    function setActiveAcc(s){window.store.set('whoai.accessories',Array.from(s));}
-    function addAccImg(a){ removeAccImg(a.key); const img=document.createElement('img'); img.src=a.src; img.alt=a.name; img.className='acc '+a.cls; img.dataset.key=a.key; accLayer.appendChild(img); }
-    function removeAccImg(key){ const el=accLayer.querySelector(`.acc[data-key="${key}"]`); if(el) el.remove(); }
-    function restoreAccessories(){ const active=getActiveAcc(); ACCESSORIES.forEach(a=>{ if(active.has(a.key)) addAccImg(a); }); }
-    restoreAccessories();
-
-    function openAccessory(){
-      const total=Object.values(window.store.get('whoai.collection',{})).reduce((a,b)=>a+b,0);
-      if(!accList.dataset.ready){
-        ACCESSORIES.forEach(a=>{
-          const div=document.createElement('div'); div.className='accChoice'; div.dataset.key=a.key;
-          div.innerHTML=`<img src="${a.src}" alt="${a.name}" style="width:80px;height:auto;display:block;margin:0 auto 6px"><div style="text-align:center"><div style="font-weight:700">${a.name}</div><div class="hint" style="font-size:12px;color:#666">タップで装着/解除</div></div><input type="checkbox" style="display:block;margin:8px auto 0">`;
-          const cb=div.querySelector('input'); cb.addEventListener('change',()=>toggleAccessory(a,cb.checked));
-          div.addEventListener('click',e=>{ if(e.target.tagName!=='INPUT'){ cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); }});
-          accList.appendChild(div);
-        });
-        accList.dataset.ready='1';
-      }
-      const active=getActiveAcc();
-      accList.querySelectorAll('.accChoice').forEach(div=>{
-        const a=ACCESSORIES.find(x=>x.key===div.dataset.key);
-        const cb=div.querySelector('input'); const hint=div.querySelector('.hint');
-        const locked=total<a.unlockAt;
-        div.style.opacity=locked?'.5':'1'; cb.disabled=locked;
-        hint.textContent=locked?`あと ${a.unlockAt-total} 個で解放`:'タップで装着/解除';
-        cb.checked=active.has(a.key);
-      });
-      openPanel(accessoryPanel);
-    }
-    function toggleAccessory(a,on){
-      const total=Object.values(window.store.get('whoai.collection',{})).reduce((a,b)=>a+b,0);
-      if(total<a.unlockAt) return;
-      const s=getActiveAcc(); if(on){ s.add(a.key); addAccImg(a);} else { s.delete(a.key); removeAccImg(a.key); } setActiveAcc(s);
-    }
-    function refreshAccessoryLocks(){
-      if(!accList.dataset.ready) return;
-      const total=Object.values(window.store.get('whoai.collection',{})).reduce((a,b)=>a+b,0);
-      accList.querySelectorAll('.accChoice').forEach(div=>{
-        const a=ACCESSORIES.find(x=>x.key===div.dataset.key);
-        const cb=div.querySelector('input'); const hint=div.querySelector('.hint'); const locked=total<a.unlockAt;
-        div.style.opacity=locked?'.5':'1'; cb.disabled=locked; hint.textContent=locked?`あと ${a.unlockAt-total} 個で解放`:'タップで装着/解除';
-      });
-    }
-
-    // パネルopen/close
-    function openPanel(p){ p.classList.add('show'); p.setAttribute('aria-hidden','false'); }
-    function closePanel(p){ p.classList.remove('show'); p.setAttribute('aria-hidden','true'); }
-
-    // UIボタン
-    document.getElementById('btnNight').onclick=()=>{ window.store.rawSet('whoai.lastScene','night'); location.href='/WHO-VQ/night.html'; };
-    document.getElementById('btnAccessory').onclick=()=>openAccessory();
-    document.getElementById('btnCollection').onclick=()=>openCollection();
-    document.getElementById('btnReset').onclick=()=>{
-      count=0; counter.textContent=0; window.store.rawSet('whoai.count','0');
-      document.querySelectorAll('.shell').forEach(e=>e.remove());
-      spawnedTotal=0; window.store.rawSet('whoai.spawned','0');
-      const col={}; window.store.set('whoai.collection',col);
-      refreshCollectionView(); refreshAccessoryLocks();
-      resizeSand();
-    };
-  </script>
+// 初期描画
+spawn(24); draw();
+});
+</script>
 </body>
 </html>
