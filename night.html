@@ -1,89 +1,72 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>Night | WHO VQ</title>
-<style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Noto Sans JP",sans-serif}
-  .bg{position:fixed;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0}
-  .bg.show{opacity:1}
-  #topbar{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
-  #topbar button{padding:6px 10px;border:none;border-radius:10px;background:rgba(255,255,255,.92);color:#111;cursor:pointer}
-  #panel{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
-  .card{background:rgba(255,255,255,.8);color:#111;border-radius:14px;padding:16px;width:min(96svw,640px);max-height:90vh;display:flex;flex-direction:column}
-  #chatLog{flex:1;background:rgba(242,242,242,.4);padding:10px;border-radius:10px;overflow:auto}
-  .msg{margin:6px 0;padding:8px 12px;border-radius:16px;max-width:70%}
-  .msg.me{background:rgba(174,225,255,.85);color:#002;margin-left:auto}
-  .msg.ai{background:rgba(255,255,255,.85);color:#000;margin-right:auto}
-  #chatCtrl{display:flex;gap:6px;margin-top:8px}
-  #chatInput{flex:1;padding:10px;border-radius:12px;border:1px solid #ccc}
-  #chatSend{padding:10px 14px;border:none;border-radius:12px;background:#4cafef;color:#fff;cursor:pointer}
-</style>
-</head>
-<body>
-  <div id="bg-night" class="bg show" style="background-image:url('/WHO-VQ/public/items/bg/night_beach.jpg')"></div>
+</div>
+</main>
 
-  <div id="topbar">
-    <div><button id="btnBack">戻る</button></div>
-    <div><button id="btnLang">EN</button></div>
-  </div>
 
-  <div id="panel">
-    <div class="card">
-      <h2 id="nightTitle">また明日</h2>
-      <div id="chatLog"></div>
-      <div id="chatCtrl">
-        <input id="chatInput" type="text" placeholder="夜空を見ながら、何を話そう？">
-        <button id="chatSend">送信</button>
-      </div>
-    </div>
-  </div>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+initLang();
+localStorage.setItem('who_lastPage','night.html');
+const log = document.getElementById('chatLog');
+const input = document.getElementById('msg');
+const send = document.getElementById('send');
+const summary = document.getElementById('summary');
+const chips = document.getElementById('chips');
 
-  <script src="/WHO-VQ/web/talk.js"></script>
-  <script>
-    // 言語
-    const btnBack=document.getElementById('btnBack');
-    const btnLang=document.getElementById('btnLang');
-    function applyLang(){
-      const lang=window.getLang(); const L=window.setLang(lang);
-      document.getElementById('nightTitle').textContent=L.nightTitle;
-      document.getElementById('chatInput').placeholder=L.nightPH;
-      document.getElementById('chatSend').textContent=L.send;
-      btnBack.textContent=L.back||'Back';
-      btnLang.textContent=window.nextLangLabel(lang);
-      btnLang.title=`言語を${btnLang.textContent}に切り替え`;
-    }
-    btnLang.addEventListener('click',()=>{
-      const lang=window.getLang(); const order=["ja","en","zh","ko"];
-      const next=order[(order.indexOf(lang)+1)%order.length]; window.setLang(next); applyLang();
-    });
-    applyLang();
 
-    btnBack.addEventListener('click',()=>{ window.store.rawSet('whoai.lastScene','beach'); location.href='/WHO-VQ/beach.html'; });
+// 今日の集計を表示
+const s = JSON.parse(localStorage.getItem('who_shells_summary')||'null');
+if(s && s.counts){
+const map = s.counts; const names = {asari:getText('shell_asari'), hamaguri:getText('shell_hama'), pearl:getText('shell_pearl'), rare:getText('shell_rare')};
+const line = Object.entries(names).map(([k,v])=>`${v}×${map[k]||0}`).join(' / ');
+summary.textContent = `${getText('score')}: ${s.score} ｜ ${line}`;
+// 哲学的な問いのチップ
+const prompts = [
+getText('p1'), // なぜ助けた？
+getText('p2'), // どんな喜び？
+getText('p3'), // 関わりは誰のため？
+];
+chips.innerHTML = '';
+for(const p of prompts){
+const b = document.createElement('button'); b.className='chip'; b.textContent = p; b.onclick = ()=>{ input.value = p + ' '; input.focus(); };
+chips.appendChild(b);
+}
+} else {
+summary.textContent = getText('no_summary');
+}
 
-    // 簡易チャット
-    const chatLog=document.getElementById('chatLog');
-    const chatInput=document.getElementById('chatInput');
-    const chatSend=document.getElementById('chatSend');
 
-    function addMsg(role,text){
-      const d=document.createElement('div');
-      d.className='msg '+(role==='user'?'me':'ai');
-      d.textContent=text;
-      chatLog.appendChild(d);
-      chatLog.scrollTop=chatLog.scrollHeight;
-    }
-    // 初回挨拶
-    const L0 = window.setLang(window.getLang());
-    addMsg('ai', L0.nightGuide);
+function push(role, text){
+const div = document.createElement('div');
+div.className = 'bubble ' + role;
+div.textContent = text;
+log.appendChild(div); log.scrollTop = log.scrollHeight;
+}
 
-    chatSend.addEventListener('click', async ()=>{
-      const text=chatInput.value.trim(); if(!text) return;
-      addMsg('user', text); chatInput.value='';
-      const reply = await window.WHOAI_TALK.talk(text, { state:{ totalCollected:Number(window.store.rawGet('whoai.count')||'0') } });
-      addMsg('ai', reply||'…');
-    });
-  </script>
+
+async function go(){
+const m = input.value.trim(); if(!m) return;
+push('user', m); input.value=''; input.focus();
+try{
+const res = await talkAPI({message: decorate(m)});
+push('bot', res.reply || getText('empty_reply'));
+}catch(e){ toast(getText('api_error')); }
+}
+
+
+function decorate(m){
+// 直近の集計を文頭に付与（API側で文脈利用可能）
+const s = JSON.parse(localStorage.getItem('who_shells_summary')||'null');
+if(!s||!s.counts) return m;
+const names = {asari:getText('shell_asari'), hamaguri:getText('shell_hama'), pearl:getText('shell_pearl'), rare:getText('shell_rare')};
+const line = Object.entries(names).map(([k,v])=>`${v}:${(s.counts[k]||0)}`).join(', ');
+return `[today shells score=${s.score}; ${line}]\n` + m;
+}
+
+
+send.onclick = go;
+input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ go(); }});
+});
+</script>
 </body>
 </html>
