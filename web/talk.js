@@ -1,131 +1,78 @@
-<!-- /WHO-VQ/web/talk.js -->
-<script>
-(() => {
-  // ★ 会話APIのURL（まだない場合は空のままでOK）
-  // 例: "https://your-vercel-app.vercel.app/api/talk"
-  const ENDPOINT = "";
+const TALK_ENDPOINT = window.TALK_ENDPOINT || (window.location.origin + "/api/talk");
+const I18N = {
+ja: {
+start:"スタート", continue:"続きから", about:"研究について",
+char_title:"キャラを選ぶ", no_name:"名前を付けない", next:"次へ", pick_char_first:"先にキャラを選んでください",
+to_night:"夜の会話へ", to_beach:"砂浜へ", collected:"集めた貝", tap_to_collect:"クリックで貝を集めよう",
+say_something:"一日のふりかえりを書いてね（Enterで送信）", send:"送信", api_error:"通信で問題が発生しました", empty_reply:"..."
+},
+zh: {
+start:"开始", continue:"继续", about:"研究说明",
+char_title:"选择角色", no_name:"不命名", next:"下一步", pick_char_first:"请先选择角色",
+to_night:"前往夜晚对话", to_beach:"返回沙滩", collected:"已收集", tap_to_collect:"点击收集贝壳",
+say_something:"写下今天的反思（回车发送）", send:"发送", api_error:"网络错误", empty_reply:"..."
+},
+ko: {
+start:"시작", continue:"이어하기", about:"연구 소개",
+char_title:"캐릭터 선택", no_name:"이름 없음", next:"다음", pick_char_first:"먼저 캐릭터를 고르세요",
+to_night:"밤의 대화로", to_beach:"해변으로", collected:"수집", tap_to_collect:"클릭하여 조개 모으기",
+say_something:"오늘의 성찰을 적어 주세요 (Enter)", send:"보내기", api_error:"네트워크 오류", empty_reply:"..."
+}
+};
 
-  async function talk(userMessage, opts = {}) {
-    const payload = {
-      userMessage,
-      personality: opts.personality || "元気",
-      state: opts.state || {},
-      model: "gpt-4o-mini",
-      temperature: 0.7,
-      max_tokens: 220,
-    };
 
-    // ENDPOINTが未設定なら、ローカルの仮返信
-    if (!ENDPOINT) {
-      console.warn("[WHOAI_TALK] ENDPOINT が設定されていません。ローカル返信を返します。");
-      return `（ローカル応答）${userMessage}`;
-    }
+function initLang(){
+const sel = document.getElementById('langSelect');
+const current = localStorage.getItem('who_lang') || guessLang();
+if(sel){
+sel.innerHTML = Object.entries(LANGS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+sel.value = current;
+sel.onchange = () => { localStorage.setItem('who_lang', sel.value); applyI18n(); };
+}
+localStorage.setItem('who_lang', current);
+applyI18n();
+}
 
-    try {
-      const res = await fetch(ENDPOINT, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      return data.reply || "…";
-    } catch (e) {
-      console.error("[WHOAI_TALK]", e);
-      return "（接続できませんでした）";
-    }
-  }
 
-  // 共通：多言語テキスト
-  const I18N = {
-    ja: {
-      about:"研究について", start:"スタート", cont:"続きから", langNext:"EN",
-      hero:"朝日の海へようこそ", toNight:"夜へ", accessory:"アクセサリー",
-      collection:"コレクション", reset:"リセット",
-      nightTitle:"また明日", nightPH:"夜空を見ながら、何を話そう？",
-      send:"送信", close:"閉じる",
-      sunriseToast:"朝日がきれいだね",
-      beachGuide:"砂の中に貝があるよ。なでて探してね",
-      nightGuide:"夜の海。話そうか？",
-      chooseChar:"キャラを選んでね",
-      back:"戻る",
-      select:"選択",
-      cooking:"料理",
-    },
-    en: {
-      about:"About this research", start:"Start", cont:"Continue", langNext:"中文",
-      hero:"Welcome to the Sunrise Shore", toNight:"To Night", accessory:"Accessories",
-      collection:"Collection", reset:"Reset",
-      nightTitle:"See you tomorrow", nightPH:"What shall we talk about under the night sky?",
-      send:"Send", close:"Close",
-      sunriseToast:"Beautiful sunrise",
-      beachGuide:"Shells hide in the sand. Swipe to find them.",
-      nightGuide:"It's night by the sea. Shall we talk?",
-      chooseChar:"Choose your character",
-      back:"Back",
-      select:"Select",
-      cooking:"Cooking",
-    },
-    zh: {
-      about:"关于研究", start:"开始", cont:"继续", langNext:"한국어",
-      hero:"欢迎来到朝阳海岸", toNight:"进入夜晚", accessory:"饰品",
-      collection:"收藏", reset:"重置",
-      nightTitle:"明天见", nightPH:"在星空下我们聊些什么？", send:"发送", close:"关闭",
-      sunriseToast:"美丽的朝阳",
-      beachGuide:"贝壳藏在沙子里，滑动寻找它们。",
-      nightGuide:"夜晚的海边，我们聊聊吧？",
-      chooseChar:"选择角色",
-      back:"返回",
-      select:"选择",
-      cooking:"料理",
-    },
-    ko: {
-      about:"연구에 대하여", start:"시작", cont:"계속", langNext:"日本語",
-      hero:"아침 해변에 오신 것을 환영합니다", toNight:"밤으로", accessory:"액세서리",
-      collection:"컬렉션", reset:"리셋",
-      nightTitle:"내일 또 봐요", nightPH:"밤하늘을 보며 무엇을 이야기할까요?", send:"보내기", close:"닫기",
-      sunriseToast:"아름다운 아침 해",
-      beachGuide:"조개는 모래 속에 숨어있어요. 쓸어보세요.",
-      nightGuide:"밤바다입니다. 이야기해볼까요?",
-      chooseChar:"캐릭터를 선택하세요",
-      back:"뒤로",
-      select:"선택",
-      cooking:"요리",
-    },
-  };
-  const LANG_ORDER = ["ja","en","zh","ko"];
-  const LANG_LABEL = { ja:"日本語", en:"EN", zh:"中文", ko:"한국어" };
+function guessLang(){
+const n = (navigator.language||'ja').slice(0,2);
+return LANGS[n] ? n : 'ja';
+}
 
-  function getLang(){ return localStorage.getItem("whoai.lang") || "ja"; }
-  function setLang(lang){
-    localStorage.setItem("whoai.lang", lang);
-    document.documentElement.setAttribute("lang", lang);
-    return I18N[lang] || I18N.ja;
-  }
-  function nextLangLabel(lang){
-    const idx = LANG_ORDER.indexOf(lang);
-    const next = LANG_ORDER[(idx+1)%LANG_ORDER.length];
-    return LANG_LABEL[next];
-  }
 
-  // 共有：ストレージ & DOM
-  const store = {
-    get:(k,d)=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch{ return d; } },
-    set:(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} },
-    rawGet:(k)=>localStorage.getItem(k),
-    rawSet:(k,v)=>localStorage.setItem(k,v),
-  };
-  const $  = (s,p=document)=>p.querySelector(s);
-  const $$ = (s,p=document)=>Array.from(p.querySelectorAll(s));
+function getLang(){ return localStorage.getItem('who_lang') || 'ja'; }
 
-  // 公開
-  window.WHOAI_TALK = { talk };
-  window.I18N = I18N;
-  window.getLang = getLang;
-  window.setLang = setLang;
-  window.nextLangLabel = nextLangLabel;
-  window.store = store;
-  window.$ = $;
-  window.$$ = $$;
-})();
-</script>
+
+function getText(key){
+const L = I18N[getLang()]||I18N.ja;
+return L[key] || I18N.ja[key] || key;
+}
+
+
+function applyI18n(){
+const L = I18N[getLang()]||I18N.ja;
+document.querySelectorAll('[data-i18n]').forEach(el=>{
+const k = el.getAttribute('data-i18n');
+if(L[k]) el.textContent = L[k];
+});
+document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+const k = el.getAttribute('data-i18n-ph');
+if(L[k]) el.setAttribute('placeholder', L[k]);
+});
+document.querySelectorAll('[data-i18n-html]').forEach(el=>{
+const k = el.getAttribute('data-i18n-html');
+if(L[k]) el.innerHTML = L[k];
+});
+}
+
+
+async function talkAPI({message}){
+const userName = localStorage.getItem('who_userName') || '';
+const charName = localStorage.getItem('who_charName') || '';
+const charColor = localStorage.getItem('who_charColor') || '';
+const lang = getLang();
+const payload = { user: userName, character: { name: charName, color: charColor }, message, lang };
+const r = await fetch(TALK_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+if(!r.ok) throw new Error('http');
+return await r.json();
+}
