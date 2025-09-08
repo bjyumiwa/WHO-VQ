@@ -19,30 +19,22 @@
 
 
 <main class="paper">
-<h1>研究について</h1>
-<p>
-<strong>WHO VQ</strong> は、ユーザーが小さな存在をお世話しながら、
-「なぜ世話をするのか」「なぜ愛おしいのか」という問いに触れるための
-哲学的な実験場です。<br><br>
-砂浜で拾う貝は関わりの痕跡であり、夜の会話はその痕跡を言葉に変える時間です。<br>
-あなたのお世話が、誰かの世界になる——その意味を感じてください。
-</p>
-<h2>ゲームの流れ</h2>
+<h1 data-i18n="about_title">研究について</h1>
+<p data-i18n-html="about_body"></p>
+<h2 data-i18n="howto_title">ゲームの流れ</h2>
 <ol>
-<li>キャラを選ぶ（名前は任意）</li>
-<li>砂浜で貝を集める（存在の痕跡を残す）</li>
-<li>夜の会話でふりかえり（お世話の意味を考える）</li>
+<li data-i18n="howto_1">キャラを選ぶ（名前は任意）</li>
+<li data-i18n="howto_2">砂浜で貝を集める（存在の痕跡を残す）</li>
+<li data-i18n="howto_3">夜の会話でふりかえり（お世話の意味を考える）</li>
 </ol>
 <div class="buttons">
-<button class="btn" onclick="history.back()">戻る</button>
+<button class="btn" onclick="history.back()" data-i18n="back">戻る</button>
 </div>
 </main>
 
 
 <script>
-window.addEventListener('DOMContentLoaded', () => {
-initLang();
-});
+window.addEventListener('DOMContentLoaded', () => { initLang(); });
 </script>
 </body>
 </html>
