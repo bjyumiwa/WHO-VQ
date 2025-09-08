@@ -1,47 +1,61 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>WHO VQ — Start</title>
-<link rel="preload" href="public/assets/bg_beach_day.jpg" as="image">
-<link rel="stylesheet" href="web/style.css">
-<script defer src="web/talk.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>WHO VQ — Start</title>
+  <!-- 画像は読み込めなくてもOK。JS側でフォールバックします -->
+  <link rel="stylesheet" href="web/style.css">
+  <script defer src="web/talk.js"></script>
+  <style>
+    /* 画像が無い時のフェイルセーフ背景 */
+    .bg.fallback{
+      background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.12), rgba(0,0,0,0)) ,
+                  linear-gradient(180deg, #02111f, #033a52 40%, #052a31 100%);
+      filter:none; opacity:1;
+    }
+  </style>
 </head>
 <body data-page="index">
-<div class="bg" style="background-image:url('public/assets/bg_beach_day.jpg')"></div>
-<header class="topbar">
-<img src="public/assets/logo_who_vq.png" alt="WHO VQ" class="logo"/>
-<div class="right">
-<select id="langSelect" aria-label="language"></select>
-</div>
-</header>
+  <div class="bg" id="bg"></div>
+  <header class="topbar">
+    <!-- ロゴも onerror で非表示フォールバック -->
+    <img src="public/assets/logo_who_vq.png" alt="WHO VQ" class="logo"
+         onerror="this.style.display='none'"/>
+    <div class="right">
+      <select id="langSelect" aria-label="language"></select>
+    </div>
+  </header>
 
+  <main class="center">
+    <h1>WHO VQ</h1>
+    <p class="subtitle">あなたのお世話が、誰かの世界に</p>
+    <div class="buttons">
+      <button class="btn primary" id="btnStart" data-i18n="start">スタート</button>
+      <button class="btn" id="btnContinue" data-i18n="continue">続きから</button>
+      <button class="btn ghost" id="btnAbout" data-i18n="about">研究について</button>
+    </div>
+  </main>
 
-<main class="center">
-<h1>WHO VQ</h1>
-<p class="subtitle">あなたのお世話が、誰かの世界に</p>
-<div class="buttons">
-<button class="btn primary" id="btnStart" data-i18n="start">スタート</button>
-<button class="btn" id="btnContinue" data-i18n="continue">続きから</button>
-<button class="btn ghost" id="btnAbout" data-i18n="about">研究について</button>
-</div>
-</main>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // 言語初期化
+      initLang();
 
+      // 背景画像（無ければグラデにフォールバック）
+      ensureBackground('#bg', 'public/assets/bg_beach_day.jpg');
 
-<script>
-window.addEventListener('DOMContentLoaded', () => {
-initLang();
-document.getElementById('btnStart').onclick = () => {
-localStorage.removeItem('who_lastPage');
-location.href = 'char.html';
-};
-document.getElementById('btnContinue').onclick = () => {
-const last = localStorage.getItem('who_lastPage');
-location.href = last || 'char.html';
-};
-document.getElementById('btnAbout').onclick = () => location.href = 'about.html';
-});
-</script>
+      // 画面遷移
+      document.getElementById('btnStart').onclick = () => {
+        localStorage.removeItem('who_lastPage');
+        location.href = 'char.html';
+      };
+      document.getElementById('btnContinue').onclick = () => {
+        const last = localStorage.getItem('who_lastPage');
+        location.href = last || 'char.html';
+      };
+      document.getElementById('btnAbout').onclick = () => location.href = 'about.html';
+    });
+  </script>
 </body>
 </html>
