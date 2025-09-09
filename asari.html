@@ -4,129 +4,622 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
   <title>WHO VQ — 潮干狩り</title>
-
-  <link rel="preload" as="image" href="public/items/bg/sunrise.jpg" />
-  <link rel="preload" as="image" href="public/items/bg/beach_day.jpg" />
-  <link rel="preload" as="image" href="public/items/bg/night_beach.jpg" />
-
   <style>
-    *{box-sizing:border-box} html,body{height:100%;margin:0}
-    body{font-family:system-ui,"Noto Sans JP","Hiragino Sans","Meiryo",sans-serif;color:#fff;overflow:hidden;background:#000 center/cover no-repeat}
-    #stage{position:relative;width:100%;height:100dvh;overflow:hidden}
-    #character{position:absolute;z-index:10;width:min(22vw,180px);transform:translate(-50%,-50%);filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));transition:left .28s ease,top .28s ease}
-    @keyframes dig{0%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-47%) rotate(-5deg)}50%{transform:translate(-50%,-54%) rotate(5deg)}75%{transform:translate(-50%,-49%) rotate(-4deg)}100%{transform:translate(-50%,-50%) rotate(0)}}
-    .digging{animation:dig .6s ease-in-out}
-    .sand{position:absolute;z-index:5;width:10px;height:10px;border-radius:50%;background:rgba(222,200,150,.85);opacity:.95;pointer-events:none;filter:blur(.3px);animation:puff .6s ease-out forwards}
-    @keyframes puff{0%{transform:translate(0,0) scale(.9);opacity:.95}100%{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0}}
-    .shell{position:absolute;z-index:8;width:min(10vw,75px);transform:translate(-50%,-30%) scale(.9);animation:pop .35s ease-out;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));user-select:none}
-    @keyframes pop{from{transform:translate(-50%,-20%) scale(.7);opacity:0}to{transform:translate(-50%,-30%) scale(1);opacity:1}}
-    .foot{position:absolute;z-index:4;width:min(26vw,210px);height:22px;background:radial-gradient(ellipse at center,rgba(0,0,0,.35),rgba(0,0,0,0) 60%);transform:translate(-50%,-50%);filter:blur(6px);opacity:.55;pointer-events:none}
-    .hud{position:fixed;left:0;right:0;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,0));gap:8px}
-    .btn{appearance:none;border:none;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;backdrop-filter:blur(6px);cursor:pointer}
-    .help{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.35);padding:8px 12px;border-radius:10px;font-size:14px;z-index:30;backdrop-filter:blur(6px)}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:'Helvetica Neue','Arial','Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif;
+      overflow:hidden;background:#000;color:#fff
+    }
+    .game-container{position:relative;width:100vw;height:100vh;overflow:hidden}
+    .bg{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;transition:opacity .8s ease;z-index:0}
+    .bg.fallback{
+      background:
+        radial-gradient(ellipse at 70% 15%, rgba(255,255,200,.6), transparent 50%),
+        linear-gradient(180deg,#87ceeb 0%,#98d8e8 30%,#4682b4 60%,#2e4f99 100%)
+    }
+    .overlay{position:absolute;inset:0;background:rgba(0,0,0,.12);z-index:1}
+
+    /* UI */
+    .ui{position:absolute;inset:0;pointer-events:none;z-index:100}
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 18px;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent);
+      backdrop-filter:blur(10px);pointer-events:auto
+    }
+    .logo{font-size:20px;font-weight:700;letter-spacing:.5px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+    .stats{display:flex;gap:14px;font-weight:400;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+    .btn{
+      background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+      color:#fff;padding:8px 12px;border-radius:18px;cursor:pointer;font-size:13px;
+      transition:.25s;backdrop-filter:blur(8px)
+    }
+    .btn:hover{background:rgba(255,255,255,.28);transform:translateY(-1px)}
+    .btn.primary{background:#e67e22;border-color:#ffc396}
+    .btn.primary:hover{background:#d35400}
+
+    /* 右ナビ */
+    .navigation{
+      position:absolute;top:50%;right:12px;transform:translateY(-50%);
+      display:flex;flex-direction:column;gap:8px;pointer-events:auto;z-index:120
+    }
+    .nav-btn{
+      background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);
+      color:#fff;padding:9px 12px;border-radius:22px;min-width:120px;
+      text-decoration:none;text-align:center;font-size:13px;transition:.25s
+    }
+    .nav-btn:hover{background:rgba(255,255,255,.18);transform:translateX(-3px)}
+
+    /* キャンバス */
+    canvas#scene{position:absolute;inset:0;z-index:50;touch-action:none}
+    canvas#char{position:absolute;inset:0;z-index:55;pointer-events:none} /* キャラ */
+    canvas#sand{position:absolute;inset:0;z-index:60;touch-action:none;cursor:grab}
+    canvas#sand.brushing{cursor:grabbing}
+
+    /* 下部インフォ */
+    .panel{
+      position:absolute;left:12px;right:12px;bottom:12px;
+      background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);
+      border-radius:14px;padding:12px 14px;backdrop-filter:blur(8px);pointer-events:auto;z-index:130
+    }
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+    .collections{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+    .chip{
+      display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.25);padding:5px 9px;border-radius:18px;font-size:12px
+    }
+    .chip img{width:20px;height:20px;border-radius:50%;object-fit:contain;background:#fff}
+    .chip .cnt{font-variant-numeric:tabular-nums}
+
+    .exam{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px;flex-wrap:wrap}
+    .badge{padding:4px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);font-size:12px}
+
+    @media (max-width:768px){
+      .logo{font-size:18px}
+      .stats{gap:10px;font-size:13px}
+      .nav-btn{min-width:100px}
+    }
   </style>
 </head>
-<body>
-  <div id="stage" aria-label="beach play area">
-    <img id="character" alt="character" />
-    <div id="foot" class="foot"></div>
-  </div>
+<body data-page="asari">
+  <div class="game-container">
+    <div class="bg fallback" id="bg"></div>
+    <div class="overlay"></div>
 
-  <div class="hud">
-    <button class="btn" onclick="location.href='char.html'">← キャラ選択に戻る</button>
-    <div class="btn" id="counter">0 shells</div>
-    <button class="btn" onclick="location.href='collection.html'">コレクション →</button>
+    <!-- UI -->
+    <div class="ui">
+      <div class="topbar">
+        <div class="logo">WHO VQ 潮干狩り</div>
+        <div class="stats">
+          <div>時間：<span id="timeDisplay">昼</span></div>
+          <div>収集：<span id="totalCollected">0</span> 個</div>
+          <div>会話チケット：<span id="talkTickets">0</span></div>
+          <div>アクセP：<span id="accPoints">0</span></div>
+        </div>
+        <div class="controls">
+          <button class="btn" id="timeBtn">時間変更</button>
+          <button class="btn primary" id="examBtn">アサリ取り検定 開始</button>
+        </div>
+      </div>
+      <div class="navigation">
+        <a href="night.html" class="nav-btn">夜の会話</a>
+        <a href="accessory.html" class="nav-btn">アクセサリー</a>
+        <a href="collection.html" class="nav-btn">コレクション</a>
+        <a href="index.html" class="nav-btn">ホーム</a>
+      </div>
+    </div>
+
+    <!-- 描画キャンバス -->
+    <canvas id="scene"></canvas>
+    <canvas id="char"></canvas>
+    <canvas id="sand"></canvas>
+
+    <!-- 下部パネル -->
+    <div class="panel" id="panel">
+      <div class="row" id="hint">砂をなでて貝を見つけよう。十分に出てきたらタップ/クリックで回収！</div>
+      <div class="collections" id="collections"></div>
+      <div class="exam" id="examInfo" style="display:none;">
+        <span class="badge">検定モード中</span>
+        <span class="badge">残り <strong id="examTime">60</strong>s</span>
+        <span class="badge">スコア <strong id="examScore">0</strong></span>
+        <span class="badge">ベスト <strong id="examBest">0</strong></span>
+      </div>
+    </div>
   </div>
-  <div class="help">砂浜をクリック/タップすると掘って貝が出ます</div>
 
   <script>
-    // 背景
-    (function setBG(){
-      const h = new Date().getHours();
-      let bg = "public/items/bg/beach_day.jpg";
-      if (h >= 5 && h <= 8) bg = "public/items/bg/sunrise.jpg";
-      else if (h >= 18 || h <= 4) bg = "public/items/bg/night_beach.jpg";
-      document.body.style.backgroundImage = `url('${bg}')`;
-    })();
+    /********** 設定・状態 **********/
+    // 背景（時間帯）
+    const BG = {
+      sunrise:'public/bg/sunrise.jpg',
+      day:'public/bg/beach_day.jpg',
+      sunset:'public/bg/sunrise.jpg',
+      night:'public/bg/night_beach.jpg'
+    };
+    const PHASES = ['sunrise','day','sunset','night'];
+    const bgEl = document.getElementById('bg');
+    const timeDisplay = document.getElementById('timeDisplay');
+    let timePhase = localStorage.getItem('who_timePhase') || inferPhaseByClock();
 
-    // キャラ読み込み（固定キー）
-    const character = document.getElementById("character");
-    function loadCharSrc(){
-      const v = localStorage.getItem("whoai_character_src");
-      return (v && typeof v === "string") ? v : "public/assets/stage1/blue_open.png";
+    // 貝の種類（報酬フラグ付）
+    const shellSprites = {
+      asari3:{ name:'アサリ(橙)', src:'public/items/asari3.png', rarity:0.15, points:2, reward:'talk' },
+      flame:{  name:'炎の貝',     src:'public/items/flame_shell.png',   rarity:0.08, points:3, reward:'talk' },
+      aurora:{ name:'オーロラ貝', src:'public/items/aurora_shell.png',  rarity:0.07, points:4, reward:'talk' },
+      luminous:{name:'光る貝',    src:'public/items/luminous_shell.png',rarity:0.06, points:5, reward:'talk' },
+
+      mystic:{ name:'神秘の貝',   src:'public/items/mystic_shell.png',  rarity:0.05, points:6, reward:'accessory' },
+      night:{  name:'夜空の貝',   src:'public/items/night_sky_shell.png',rarity:0.03, points:8, reward:'accessory' },
+      rainbow:{name:'虹色のレア貝',src:'public/items/rare_rainbow.png', rarity:0.02, points:10, reward:'accessory' },
+      pearl:{  name:'レア真珠',   src:'public/items/rare_pearl.png',    rarity:0.01, points:15, reward:'accessory' },
+
+      asari1:{ name:'アサリ(白)', src:'public/items/asari1.png', rarity:0.25, points:1, exam:true },
+      asari2:{ name:'アサリ(黄)', src:'public/items/asari2.png', rarity:0.20, points:1, exam:true }
+    };
+
+    // 画像プリロード
+    const shellImages = {};
+    for(const k in shellSprites){ const im=new Image(); im.src=shellSprites[k].src; shellImages[k]=im; }
+
+    // 収集カウント/通貨
+    const counts = JSON.parse(localStorage.getItem('who_collection_counts')||'{}');
+    for(const k of Object.keys(shellSprites)){ if(!(k in counts)) counts[k]=0; }
+    let talkTickets = parseInt(localStorage.getItem('who_talk_tickets')||'0',10);
+    let accPoints   = parseInt(localStorage.getItem('who_accessory_points')||'0',10);
+
+    // 検定
+    const EXAM_DURATION = 60; // 秒
+    let examActive = false, examLeft = EXAM_DURATION, examScore = 0;
+    const bestKey = 'who_exam_best';
+    let examBest = parseInt(localStorage.getItem(bestKey)||'0',10);
+    let examTimer = null;
+
+    // DOM
+    const totalCollectedEl = document.getElementById('totalCollected');
+    const talkTicketsEl = document.getElementById('talkTickets');
+    const accPointsEl   = document.getElementById('accPoints');
+    const collectionsEl = document.getElementById('collections');
+    const examInfo = document.getElementById('examInfo');
+    const examTimeEl = document.getElementById('examTime');
+    const examScoreEl = document.getElementById('examScore');
+    const examBestEl  = document.getElementById('examBest');
+
+    /********** キャンバス準備 **********/
+    const scene = document.getElementById('scene');
+    const charC = document.getElementById('char');
+    const sand  = document.getElementById('sand');
+    const sctx = scene.getContext('2d');
+    const cctx = charC.getContext('2d');
+    const mctx = sand.getContext('2d');
+
+    function resize(){
+      const W=innerWidth,H=innerHeight;
+      scene.width = charC.width = sand.width = W;
+      scene.height = charC.height = sand.height = H;
+      drawAll();
     }
-    character.src = loadCharSrc();
+    addEventListener('resize', resize);
 
-    // 位置制御
-    const stage = document.getElementById("stage");
-    const foot  = document.getElementById("foot");
-    let cx = innerWidth*0.5, cy = innerHeight*0.72;
-    function placeCharacter(x, y){
-      cx = Math.max(30, Math.min(innerWidth - 30, x));
-      cy = Math.max(60, Math.min(innerHeight - 30, y));
-      character.style.left = cx+"px"; character.style.top = cy+"px";
-      foot.style.left = cx+"px"; foot.style.top = (cy + character.clientHeight*0.40)+"px";
+    /********** 砂埋めロジック **********/
+    const BRUSH = { size: 50 };
+    let brushing=false, lastX=0, lastY=0, lastBrushAt=null;
+    function resetSand(){
+      mctx.globalCompositeOperation='source-over';
+      const g=mctx.createLinearGradient(0,sand.height*0.5,0,sand.height);
+      g.addColorStop(0,'rgba(220,190,120,0.88)'); g.addColorStop(1,'rgba(210,180,110,0.92)');
+      mctx.fillStyle=g; mctx.fillRect(0,0,sand.width,sand.height);
+      // ノイズ
+      const density=Math.floor((sand.width*sand.height)/1200); mctx.globalAlpha=.08;
+      for(let i=0;i<density;i++){ mctx.fillStyle=`rgba(255,255,255,${Math.random()*0.6})`; mctx.fillRect(Math.random()*sand.width,Math.random()*sand.height,1,1); }
+      mctx.globalAlpha=1;
     }
-    addEventListener("resize", ()=> placeCharacter(cx, cy));
-    character.addEventListener("load", ()=> placeCharacter(cx, cy));
-    placeCharacter(cx, cy);
-
-    // コレクション
-    const counterEl = document.getElementById("counter");
-    function loadCollection(){ try{ return JSON.parse(localStorage.getItem("whoai_shells")||"[]"); }catch(e){ return [] } }
-    function saveCollection(a){ localStorage.setItem("whoai_shells", JSON.stringify(a)); }
-    function addToCollection(item){ const a=loadCollection(); a.push({...item,ts:Date.now()}); saveCollection(a); counterEl.textContent = `${a.length} shells`; }
-    counterEl.textContent = `${loadCollection().length} shells`;
-
-    // 貝プール
-    const COMMON = [
-      {id:"asari_white",  label:"アサリ（白）",  src:"public/items/shells/asari_white.png",  weight:60},
-      {id:"asari_yellow", label:"アサリ（黄）",  src:"public/items/shells/asari_yellow.png", weight:30},
-      {id:"asari_orange", label:"アサリ（橙）",  src:"public/items/shells/asari_orange.png", weight:20},
-    ];
-    const RARE = [
-      {id:"rare_flame",   label:"炎の貝",   src:"public/items/shells/rare_flame.png",   weight:6},
-      {id:"rare_aurora",  label:"オーロラ", src:"public/items/shells/rare_aurora.png",  weight:5},
-      {id:"rare_glow",    label:"光る貝",   src:"public/items/shells/rare_glow.png",    weight:5},
-      {id:"rare_mystic",  label:"神秘の貝", src:"public/items/shells/rare_mystic.png",  weight:4},
-      {id:"rare_night",   label:"夜空の貝", src:"public/items/shells/rare_night.png",   weight:3},
-      {id:"rare_rainbow", label:"虹色の貝", src:"public/items/shells/rare_rainbow.png", weight:2},
-      {id:"rare_pearl",   label:"真珠",     src:"public/items/shells/rare_pearl.png",   weight:2},
-    ];
-    function pick(pool){ const tot=pool.reduce((s,a)=>s+a.weight,0); let r=Math.random()*tot; for(const a of pool){ if((r-=a.weight)<=0) return a; } return pool[0]; }
-    function pickShell(){ return Math.random() < 0.9 ? pick(COMMON) : pick(RARE); }
-
-    // 砂・貝エフェクト
-    function spawnSand(x,y){
-      for(let i=0;i<6;i++){
-        const d=document.createElement("div"); d.className="sand";
-        const ang=(Math.random()*Math.PI)-Math.PI/2, dist=20+Math.random()*26;
-        d.style.left=(x+(Math.random()*10-5))+"px"; d.style.top=(y+(Math.random()*8-2))+"px";
-        d.style.setProperty("--dx",(Math.cos(ang)*dist)+"px"); d.style.setProperty("--dy",(Math.sin(ang)*dist)+"px");
-        stage.appendChild(d); setTimeout(()=>d.remove(),620);
+    function eraseAt(x,y){
+      mctx.save(); mctx.globalCompositeOperation='destination-out';
+      mctx.beginPath(); mctx.arc(x,y,BRUSH.size/2,0,Math.PI*2); mctx.fill(); mctx.restore();
+      lastBrushAt = {x,y, t: performance.now()};
+      // 露出度
+      for(const sh of shells){
+        const d=Math.hypot(x-sh.x,y-sh.y);
+        if(d < sh.r + BRUSH.size*0.6){ sh.reveal++; if(sh.reveal>12) sh.revealed=true; }
       }
     }
-    function spawnShellAt(x,y){
-      const item=pickShell(); const img=new Image();
-      img.src=item.src; img.alt=item.label; img.className="shell";
-      img.style.left=x+"px"; img.style.top=(y+4)+"px"; img.draggable=false;
-      img.addEventListener("click",(e)=>{ e.stopPropagation(); img.style.transition="transform .25s, opacity .25s"; img.style.transform="translate(-50%,-60%) scale(.8)"; img.style.opacity="0"; setTimeout(()=>img.remove(),240); addToCollection(item); });
-      stage.appendChild(img);
-    }
+    function pos(e){ return e.touches && e.touches[0] ? {x:e.touches[0].clientX,y:e.touches[0].clientY} : {x:e.clientX,y:e.clientY}; }
+    sand.addEventListener('pointerdown',e=>{
+      sand.setPointerCapture(e.pointerId); brushing=true; sand.classList.add('brushing');
+      const p=pos(e); eraseAt(p.x,p.y); lastX=p.x; lastY=p.y;
+    });
+    sand.addEventListener('pointermove',e=>{
+      if(!brushing) return; const p=pos(e);
+      const steps=Math.max(1,Math.floor(Math.hypot(p.x-lastX,p.y-lastY)/8));
+      for(let i=1;i<=steps;i++){
+        const ix=lastX+(p.x-lastX)*i/steps, iy=lastY+(p.y-lastY)*i/steps;
+        eraseAt(ix,iy);
+      }
+      lastX=p.x; lastY=p.y;
+    });
+    sand.addEventListener('pointerup',()=>{brushing=false;sand.classList.remove('brushing')});
+    sand.addEventListener('pointercancel',()=>{brushing=false;sand.classList.remove('brushing')});
 
-    // 掘る
-    let lock=false;
-    stage.addEventListener("click",(ev)=>{
-      if(lock) return;
-      const r=stage.getBoundingClientRect(); const x=ev.clientX-r.left, y=ev.clientY-r.top;
-      lock=true; placeCharacter(x,y+10);
-      setTimeout(()=>{ character.classList.add("digging"); spawnSand(cx,cy);
-        setTimeout(()=>{ spawnShellAt(cx,cy); character.classList.remove("digging"); lock=false; },340);
-      },260);
+    // クリックで回収
+    sand.addEventListener('click', e=>{
+      const p=pos(e);
+      for(const sh of shells){
+        if(sh.collected) continue;
+        const d=Math.hypot(p.x-sh.x,p.y-sh.y);
+        if(d<=sh.r && sh.revealed){
+          collectShell(sh);
+          // キャラ拾いモーションのトリガ
+          triggerHold(sh.x, sh.y);
+          break;
+        }
+      }
     });
 
-    // 「続きから」用
-    localStorage.setItem("whoai_lastPage","asari.html");
+    /********** シェル配置 **********/
+    let shells=[];
+    function spawnShells(n=18){
+      shells=[];
+      const W=scene.width,H=scene.height;
+      for(let i=0;i<n;i++){
+        const type = pickShellType();
+        const r = rand(22,36);
+        const x = rand(r, W-r);
+        const y = rand(H*0.45, H-r-20);
+        shells.push({type,x,y,r,reveal:0,revealed:false,collected:false,pulse:0});
+      }
+    }
+    function pickShellType(){
+      const pool = examActive
+        ? {asari1:0.45, asari2:0.35, asari3:0.20}
+        : Object.fromEntries(Object.entries(shellSprites).map(([k,v])=>[k,v.rarity]));
+      const total = Object.values(pool).reduce((a,b)=>a+b,0);
+      let r=Math.random()*total;
+      for(const [k,w] of Object.entries(pool)){ if((r-=w)<=0) return k; }
+      return 'asari1';
+    }
+
+    /********** 収集処理 **********/
+    function collectShell(sh){
+      sh.collected=true; sh.pulse=1;
+      counts[sh.type] = (counts[sh.type]||0)+1;
+
+      const spec = shellSprites[sh.type];
+      if(spec.reward==='talk'){
+        talkTickets += 1;
+        localStorage.setItem('who_talk_tickets', talkTickets);
+        flashHint(`会話チケット +1（${spec.name}）→ 夜の会話へ行けます`);
+      }else if(spec.reward==='accessory'){
+        accPoints += spec.points;
+        localStorage.setItem('who_accessory_points', accPoints);
+        flashHint(`${spec.name} を回収！ アクセP +${spec.points}（合計 ${accPoints}）`);
+      }
+
+      if(examActive && (spec.exam || sh.type==='asari3')){
+        examScore += (sh.type==='asari3' ? 2 : 1);
+        examScoreEl.textContent = examScore;
+      }
+
+      persistCounts();
+      updateTopStats();
+      updateCollectionChips();
+    }
+
+    function persistCounts(){
+      localStorage.setItem('who_collection_counts', JSON.stringify(counts));
+      const total = Object.values(counts).reduce((a,b)=>a+b,0);
+      localStorage.setItem('who_shells_total', total);
+    }
+
+    /********** キャラクター **********/
+    const CHAR = {
+      color: (localStorage.getItem('who_char_color')||'pink').toLowerCase().replace(/[^a-z]/g,'') || 'pink',
+      x: 0, y: 0, vx:0, vy:0, scale:1,
+      targetX: null, targetY: null,
+      state: 'idle', // idle | walk | dig | hold
+      stateTimer: 0,
+      facing: 1, // 1:right, -1:left
+      images: { idle:null, dig1:null, dig2:null, hold:null },
+      footPhase: 0,
+      holdJumpT: 0,
+      lastSeenBrush: 0
+    };
+
+    function loadCharImages(){
+      const base = 'public/assets/stage1/';
+      const c = CHAR.color;
+      const paths = {
+        idle: `${base}${c}_open.png`,
+        dig1: `${base}${c}_close.png`,
+        dig2: `${base}${c}_open.png`,
+        hold: `${base}${c}_hold.png`
+      };
+      for(const k in paths){
+        const im=new Image();
+        im.src = paths[k];
+        im.onerror = ()=>{ /* フォールバックは描画時にベクターで */ };
+        CHAR.images[k]=im;
+      }
+    }
+
+    function initChar(){
+      loadCharImages();
+      const W=charC.width,H=charC.height;
+      CHAR.x = W*0.5;
+      CHAR.y = H*0.82;
+      CHAR.scale = Math.min(1, Math.max(0.7, W/1280));
+    }
+
+    // 掘り先（ユーザのブラシ座標）に寄ってくる
+    function updateChar(dt){
+      // 直近のブラシ位置があればそこを目標に
+      if(lastBrushAt && performance.now()-lastBrushAt.t < 2000){
+        CHAR.targetX = lastBrushAt.x;
+        // 砂エリア中腹を目標高さ
+        CHAR.targetY = Math.max(charC.height*0.55, Math.min(charC.height*0.86, lastBrushAt.y+40));
+        CHAR.lastSeenBrush = lastBrushAt.t;
+      }else{
+        CHAR.targetX = null;
+      }
+
+      // ステートマシン
+      const nearBrush = lastBrushAt && Math.hypot((lastBrushAt.x-CHAR.x),(lastBrushAt.y-CHAR.y)) < 140;
+      const diggingPossible = nearBrush && performance.now()-lastBrushAt.t < 1200;
+
+      if(CHAR.state !== 'hold'){
+        if(diggingPossible){
+          CHAR.state = 'dig';
+        }else if(CHAR.targetX!=null){
+          CHAR.state = 'walk';
+        }else{
+          CHAR.state = 'idle';
+        }
+      }
+
+      // 目標に向かって移動
+      const speed = 320*CHAR.scale; // px/s
+      if(CHAR.state==='walk' || CHAR.state==='dig'){
+        const tx = CHAR.targetX ?? CHAR.x;
+        const ty = CHAR.targetY ?? CHAR.y;
+        const dx = tx-CHAR.x, dy = ty-CHAR.y;
+        const dist = Math.hypot(dx,dy);
+        if(dist>1){
+          CHAR.facing = dx>=0 ? 1 : -1;
+          const ux=dx/dist, uy=dy/dist;
+          const step = Math.min(dist, speed*dt);
+          CHAR.x += ux*step;
+          CHAR.y += uy*step;
+        }
+      }
+
+      // 揺れ/足踏み
+      CHAR.footPhase += dt*(CHAR.state==='walk'?6: (CHAR.state==='dig'?4:1.5));
+      CHAR.stateTimer += dt;
+
+      // holdジャンプ（回収リアクション）
+      if(CHAR.state==='hold'){
+        CHAR.holdJumpT += dt;
+        if(CHAR.holdJumpT>0.8){
+          CHAR.state='idle'; CHAR.holdJumpT=0;
+        }
+      }
+    }
+
+    function drawChar(){
+      cctx.clearRect(0,0,charC.width,charC.height);
+      // 影
+      const shadowW = 80*CHAR.scale, shadowH = 18*CHAR.scale;
+      cctx.save();
+      cctx.globalAlpha=0.25;
+      cctx.fillStyle='#000';
+      cctx.beginPath();
+      cctx.ellipse(CHAR.x, CHAR.y+22*CHAR.scale, shadowW, shadowH, 0, 0, Math.PI*2);
+      cctx.fill();
+      cctx.restore();
+
+      // ジャンプ補正
+      let jumpY = 0;
+      if(CHAR.state==='hold'){
+        const t = CHAR.holdJumpT;
+        // 簡易イージング：上がって降りる
+        jumpY = -Math.sin(Math.min(1,t)*Math.PI)*18*CHAR.scale;
+      }
+
+      // 画像選択
+      const bob = Math.sin(CHAR.footPhase)*3*CHAR.scale;
+      let img = CHAR.images.idle;
+      if(CHAR.state==='walk'){ img = (Math.floor(CHAR.footPhase)%2===0)? CHAR.images.dig1:CHAR.images.dig2; }
+      if(CHAR.state==='dig'){  img = (Math.floor(CHAR.stateTimer*6)%2===0)? CHAR.images.dig1:CHAR.images.dig2; }
+      if(CHAR.state==='hold'){ img = CHAR.images.hold || CHAR.images.idle; }
+
+      // 画像が無い場合はフォールバック（円キャラ）
+      const W = 120*CHAR.scale, H = 120*CHAR.scale;
+      cctx.save();
+      cctx.translate(CHAR.x, CHAR.y + bob + jumpY);
+      cctx.scale(CHAR.facing, 1);
+
+      if(img && img.complete && img.naturalWidth){
+        cctx.drawImage(img, -W/2, -H, W, H);
+      }else{
+        // フォールバック：顔
+        cctx.fillStyle='#ffc0cb';
+        cctx.beginPath(); cctx.arc(0, -H*0.55, H*0.45, 0, Math.PI*2); cctx.fill();
+        cctx.fillStyle='#333'; cctx.beginPath(); cctx.arc(-14, -H*0.58, 6,0,Math.PI*2); cctx.arc(14,-H*0.58,6,0,Math.PI*2); cctx.fill();
+        // 手
+        cctx.strokeStyle='#ffd1e0'; cctx.lineWidth=8; cctx.lineCap='round';
+        if(CHAR.state==='dig'){
+          cctx.beginPath(); cctx.moveTo(-12,-H*0.38); cctx.lineTo(-28,-H*0.30); cctx.stroke();
+          cctx.beginPath(); cctx.moveTo(12,-H*0.38);  cctx.lineTo( 28,-H*0.30); cctx.stroke();
+        }else{
+          cctx.beginPath(); cctx.moveTo(-14,-H*0.42); cctx.lineTo(-26,-H*0.35); cctx.stroke();
+          cctx.beginPath(); cctx.moveTo(14,-H*0.42);  cctx.lineTo( 26,-H*0.35); cctx.stroke();
+        }
+      }
+
+      // 掘り砂の演出（キャラ前面、砂キャンバスより後ろ）
+      if(CHAR.state==='dig'){
+        cctx.globalAlpha=0.25;
+        for(let i=0;i<6;i++){
+          const rx = (Math.random()*16-8)*CHAR.scale;
+          const ry = (Math.random()*10-2)*CHAR.scale;
+          cctx.fillStyle='rgba(200,170,100,.7)';
+          cctx.beginPath(); cctx.arc(rx, -H*0.25+ry, 2.5*CHAR.scale, 0, Math.PI*2); cctx.fill();
+        }
+        cctx.globalAlpha=1;
+      }
+      cctx.restore();
+    }
+
+    // 回収時のホールド・喜び
+    function triggerHold(px,py){
+      // キャラを少しだけ回収位置へ向ける
+      CHAR.targetX = px; CHAR.targetY = py;
+      CHAR.facing = (px-CHAR.x)>=0 ? 1 : -1;
+      CHAR.state = 'hold';
+      CHAR.stateTimer = 0;
+      CHAR.holdJumpT = 0;
+    }
+
+    /********** 背景・時間帯 **********/
+    function inferPhaseByClock(){
+      const h=new Date().getHours();
+      if(h>=18||h<5) return 'night';
+      if(h>=5&&h<9)  return 'sunrise';
+      if(h>=16&&h<18) return 'sunset';
+      return 'day';
+    }
+    function setBackground(phase){
+      const img=new Image();
+      img.onload=()=>{bgEl.style.backgroundImage=`url(${BG[phase]})`;bgEl.classList.remove('fallback');};
+      img.onerror=()=>bgEl.classList.add('fallback');
+      img.src=BG[phase];
+      timeDisplay.textContent = ({sunrise:'朝焼け',day:'昼',sunset:'夕景',night:'夜'})[phase];
+      localStorage.setItem('who_timePhase', phase);
+    }
+    document.getElementById('timeBtn').addEventListener('click', ()=>{
+      const i = PHASES.indexOf(timePhase);
+      timePhase = PHASES[(i+1)%PHASES.length];
+      setBackground(timePhase);
+    });
+
+    /********** 検定モード **********/
+    const examBtn = document.getElementById('examBtn');
+    examBtn.addEventListener('click', ()=>{
+      if(!examActive) startExam();
+      else endExam(true);
+    });
+
+    function startExam(){
+      examActive = true; examLeft = EXAM_DURATION; examScore = 0;
+      examBtn.textContent = '検定 終了';
+      examInfo.style.display = '';
+      examTimeEl.textContent = examLeft;
+      examScoreEl.textContent = '0';
+      examBestEl.textContent = examBest.toString();
+      spawnShells(22); resetSand();
+      flashHint('アサリ取り検定スタート！ asari1/2/3 を集めてスコアを伸ばそう！');
+      examTimer = setInterval(()=>{
+        examLeft--; examTimeEl.textContent = examLeft;
+        if(examLeft<=0) endExam(false);
+      },1000);
+    }
+    function endExam(manual){
+      if(!examActive) return;
+      examActive=false;
+      examBtn.textContent='アサリ取り検定 開始';
+      clearInterval(examTimer); examTimer=null;
+      examInfo.style.display='none';
+      if(examScore>examBest){ examBest=examScore; localStorage.setItem(bestKey, String(examBest)); }
+      flashHint(`検定おわり！ スコア ${examScore}（ベスト ${examBest}）${manual?'':''}`);
+      spawnShells(18); resetSand();
+    }
+
+    /********** UI 更新 **********/
+    function updateTopStats(){
+      totalCollectedEl.textContent = Object.values(counts).reduce((a,b)=>a+b,0);
+      talkTicketsEl.textContent = talkTickets;
+      accPointsEl.textContent   = accPoints;
+    }
+    function updateCollectionChips(){
+      collectionsEl.innerHTML='';
+      const order = ['asari1','asari2','asari3','flame','aurora','luminous','mystic','night','rainbow','pearl'];
+      for(const key of order){
+        const sp = shellSprites[key]; if(!sp) continue;
+        const chip=document.createElement('div'); chip.className='chip';
+        const img=document.createElement('img'); img.src=sp.src; img.alt=sp.name;
+        img.onerror=()=>{img.style.display='none';};
+        const label=document.createElement('span'); label.textContent=sp.name;
+        const cnt=document.createElement('span'); cnt.className='cnt'; cnt.textContent=counts[key]||0;
+        chip.appendChild(img); chip.appendChild(label); chip.append(' × '); chip.appendChild(cnt);
+        collectionsEl.appendChild(chip);
+      }
+    }
+    function flashHint(msg){
+      const hint=document.getElementById('hint');
+      hint.textContent = msg;
+      hint.style.opacity='1';
+      setTimeout(()=>{hint.style.opacity='.9';},1600);
+    }
+
+    /********** 描画 **********/
+    function drawAll(){
+      sctx.clearRect(0,0,scene.width,scene.height);
+      for(const sh of shells){ if(!sh.collected) drawShell(sh); }
+    }
+    function drawShell(sh){
+      sctx.save();
+      if(sh.revealed){ const pulse=(Math.sin(Date.now()/200)+1)/2; sctx.shadowColor=`rgba(255,255,200,${.35+pulse*.25})`; sctx.shadowBlur=18+pulse*10; }
+      const img=shellImages[sh.type];
+      if(img && img.complete && img.naturalWidth){
+        sctx.drawImage(img, sh.x-sh.r, sh.y-sh.r, sh.r*2, sh.r*2);
+      }else{
+        sctx.fillStyle='#ccc'; sctx.beginPath(); sctx.arc(sh.x,sh.y,sh.r,0,Math.PI*2); sctx.fill();
+      }
+      sctx.restore();
+    }
+
+    function loop(ts){
+      requestAnimationFrame(loop);
+      drawAll();
+
+      // 簡易回収アニメ
+      for(const sh of shells){
+        if(sh.pulse>0){
+          sh.pulse += .08;
+          sctx.save();
+          sctx.globalAlpha = Math.max(0,1-(sh.pulse-1)*0.9);
+          sctx.translate(sh.x,sh.y); sctx.scale(sh.pulse,sh.pulse);
+          drawShell({...sh,x:0,y:0});
+          sctx.restore();
+          if(sh.pulse>2) sh.pulse=0;
+        }
+      }
+
+      // キャラ更新・描画
+      const now = performance.now();
+      if(!loop.last) loop.last = now;
+      const dt = Math.min(0.033, (now - loop.last)/1000);
+      loop.last = now;
+      updateChar(dt);
+      drawChar();
+    }
+
+    /********** 初期化 **********/
+    function init(){
+      setBackground(timePhase);
+      resize();
+      spawnShells(18);
+      resetSand();
+      updateTopStats();
+      updateCollectionChips();
+      localStorage.setItem('who_lastPage','asari.html');
+      initChar();
+
+      // 初回、中央付近を「ここ掘れ！」として誘導
+      lastBrushAt = {x: innerWidth*0.6, y: innerHeight*0.7, t: performance.now()};
+    }
+    init(); loop();
+
+    /********** util **********/
+    function rand(a,b){return a+Math.random()*(b-a)}
   </script>
 </body>
 </html>
