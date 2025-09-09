@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>WHO VQ — 潮干狩り</title>
+
+  <link rel="preload" as="image" href="public/items/bg/sunrise.jpg" />
+  <link rel="preload" as="image" href="public/items/bg/beach_day.jpg" />
+  <link rel="preload" as="image" href="public/items/bg/night_beach.jpg" />
+
+  <style>
+    *{box-sizing:border-box} html,body{height:100%;margin:0}
+    body{font-family:system-ui,"Noto Sans JP","Hiragino Sans","Meiryo",sans-serif;color:#fff;overflow:hidden;background:#000 center/cover no-repeat}
+    #stage{position:relative;width:100%;height:100dvh;overflow:hidden}
+    #character{position:absolute;z-index:10;width:min(22vw,180px);transform:translate(-50%,-50%);filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));transition:left .28s ease,top .28s ease}
+    @keyframes dig{0%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-47%) rotate(-5deg)}50%{transform:translate(-50%,-54%) rotate(5deg)}75%{transform:translate(-50%,-49%) rotate(-4deg)}100%{transform:translate(-50%,-50%) rotate(0)}}
+    .digging{animation:dig .6s ease-in-out}
+    .sand{position:absolute;z-index:5;width:10px;height:10px;border-radius:50%;background:rgba(222,200,150,.85);opacity:.95;pointer-events:none;filter:blur(.3px);animation:puff .6s ease-out forwards}
+    @keyframes puff{0%{transform:translate(0,0) scale(.9);opacity:.95}100%{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0}}
+    .shell{position:absolute;z-index:8;width:min(10vw,75px);transform:translate(-50%,-30%) scale(.9);animation:pop .35s ease-out;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));user-select:none}
+    @keyframes pop{from{transform:translate(-50%,-20%) scale(.7);opacity:0}to{transform:translate(-50%,-30%) scale(1);opacity:1}}
+    .foot{position:absolute;z-index:4;width:min(26vw,210px);height:22px;background:radial-gradient(ellipse at center,rgba(0,0,0,.35),rgba(0,0,0,0) 60%);transform:translate(-50%,-50%);filter:blur(6px);opacity:.55;pointer-events:none}
+    .hud{position:fixed;left:0;right:0;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,0));gap:8px}
+    .btn{appearance:none;border:none;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;backdrop-filter:blur(6px);cursor:pointer}
+    .help{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.35);padding:8px 12px;border-radius:10px;font-size:14px;z-index:30;backdrop-filter:blur(6px)}
+  </style>
+</head>
+<body>
+  <div id="stage" aria-label="beach play area">
+    <img id="character" alt="character" />
+    <div id="foot" class="foot"></div>
+  </div>
+
+  <div class="hud">
+    <button class="btn" onclick="location.href='char.html'">← キャラ選択に戻る</button>
+    <div class="btn" id="counter">0 shells</div>
+    <button class="btn" onclick="location.href='collection.html'">コレクション →</button>
+  </div>
+  <div class="help">砂浜をクリック/タップすると掘って貝が出ます</div>
+
+  <script>
+    // 背景
+    (function setBG(){
+      const h = new Date().getHours();
+      let bg = "public/items/bg/beach_day.jpg";
+      if (h >= 5 && h <= 8) bg = "public/items/bg/sunrise.jpg";
+      else if (h >= 18 || h <= 4) bg = "public/items/bg/night_beach.jpg";
+      document.body.style.backgroundImage = `url('${bg}')`;
+    })();
+
+    // キャラ読み込み（固定キー）
+    const character = document.getElementById("character");
+    function loadCharSrc(){
+      const v = localStorage.getItem("whoai_character_src");
+      return (v && typeof v === "string") ? v : "public/assets/stage1/blue_open.png";
+    }
+    character.src = loadCharSrc();
+
+    // 位置制御
+    const stage = document.getElementById("stage");
+    const foot  = document.getElementById("foot");
+    let cx = innerWidth*0.5, cy = innerHeight*0.72;
+    function placeCharacter(x, y){
+      cx = Math.max(30, Math.min(innerWidth - 30, x));
+      cy = Math.max(60, Math.min(innerHeight - 30, y));
+      character.style.left = cx+"px"; character.style.top = cy+"px";
+      foot.style.left = cx+"px"; foot.style.top = (cy + character.clientHeight*0.40)+"px";
+    }
+    addEventListener("resize", ()=> placeCharacter(cx, cy));
+    character.addEventListener("load", ()=> placeCharacter(cx, cy));
+    placeCharacter(cx, cy);
+
+    // コレクション
+    const counterEl = document.getElementById("counter");
+    function loadCollection(){ try{ return JSON.parse(localStorage.getItem("whoai_shells")||"[]"); }catch(e){ return [] } }
+    function saveCollection(a){ localStorage.setItem("whoai_shells", JSON.stringify(a)); }
+    function addToCollection(item){ const a=loadCollection(); a.push({...item,ts:Date.now()}); saveCollection(a); counterEl.textContent = `${a.length} shells`; }
+    counterEl.textContent = `${loadCollection().length} shells`;
+
+    // 貝プール
+    const COMMON = [
+      {id:"asari_white",  label:"アサリ（白）",  src:"public/items/shells/asari_white.png",  weight:60},
+      {id:"asari_yellow", label:"アサリ（黄）",  src:"public/items/shells/asari_yellow.png", weight:30},
+      {id:"asari_orange", label:"アサリ（橙）",  src:"public/items/shells/asari_orange.png", weight:20},
+    ];
+    const RARE = [
+      {id:"rare_flame",   label:"炎の貝",   src:"public/items/shells/rare_flame.png",   weight:6},
+      {id:"rare_aurora",  label:"オーロラ", src:"public/items/shells/rare_aurora.png",  weight:5},
+      {id:"rare_glow",    label:"光る貝",   src:"public/items/shells/rare_glow.png",    weight:5},
+      {id:"rare_mystic",  label:"神秘の貝", src:"public/items/shells/rare_mystic.png",  weight:4},
+      {id:"rare_night",   label:"夜空の貝", src:"public/items/shells/rare_night.png",   weight:3},
+      {id:"rare_rainbow", label:"虹色の貝", src:"public/items/shells/rare_rainbow.png", weight:2},
+      {id:"rare_pearl",   label:"真珠",     src:"public/items/shells/rare_pearl.png",   weight:2},
+    ];
+    function pick(pool){ const tot=pool.reduce((s,a)=>s+a.weight,0); let r=Math.random()*tot; for(const a of pool){ if((r-=a.weight)<=0) return a; } return pool[0]; }
+    function pickShell(){ return Math.random() < 0.9 ? pick(COMMON) : pick(RARE); }
+
+    // 砂・貝エフェクト
+    function spawnSand(x,y){
+      for(let i=0;i<6;i++){
+        const d=document.createElement("div"); d.className="sand";
+        const ang=(Math.random()*Math.PI)-Math.PI/2, dist=20+Math.random()*26;
+        d.style.left=(x+(Math.random()*10-5))+"px"; d.style.top=(y+(Math.random()*8-2))+"px";
+        d.style.setProperty("--dx",(Math.cos(ang)*dist)+"px"); d.style.setProperty("--dy",(Math.sin(ang)*dist)+"px");
+        stage.appendChild(d); setTimeout(()=>d.remove(),620);
+      }
+    }
+    function spawnShellAt(x,y){
+      const item=pickShell(); const img=new Image();
+      img.src=item.src; img.alt=item.label; img.className="shell";
+      img.style.left=x+"px"; img.style.top=(y+4)+"px"; img.draggable=false;
+      img.addEventListener("click",(e)=>{ e.stopPropagation(); img.style.transition="transform .25s, opacity .25s"; img.style.transform="translate(-50%,-60%) scale(.8)"; img.style.opacity="0"; setTimeout(()=>img.remove(),240); addToCollection(item); });
+      stage.appendChild(img);
+    }
+
+    // 掘る
+    let lock=false;
+    stage.addEventListener("click",(ev)=>{
+      if(lock) return;
+      const r=stage.getBoundingClientRect(); const x=ev.clientX-r.left, y=ev.clientY-r.top;
+      lock=true; placeCharacter(x,y+10);
+      setTimeout(()=>{ character.classList.add("digging"); spawnSand(cx,cy);
+        setTimeout(()=>{ spawnShellAt(cx,cy); character.classList.remove("digging"); lock=false; },340);
+      },260);
+    });
+
+    // 「続きから」用
+    localStorage.setItem("whoai_lastPage","asari.html");
+  </script>
+</body>
+</html>
