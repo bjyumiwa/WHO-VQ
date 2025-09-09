@@ -5,47 +5,37 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
   <title>WHO VQ — Character</title>
 
-  <!-- 背景先読み -->
+  <!-- 背景＆キャラ先読み（必ず public/ 配下） -->
   <link rel="preload" as="image" href="public/items/bg/sunrise.jpg" />
   <link rel="preload" as="image" href="public/items/bg/beach_day.jpg" />
   <link rel="preload" as="image" href="public/items/bg/night_beach.jpg" />
+  <link rel="preload" as="image" href="public/assets/stage1/pink_open.png" />
+  <link rel="preload" as="image" href="public/assets/stage1/blue_open.png" />
+  <link rel="preload" as="image" href="public/assets/stage1/green_open.png" />
+  <link rel="preload" as="image" href="public/assets/stage1/purple_open.png" />
 
   <style>
-    :root { --glass: rgba(255,255,255,.12); --text-shadow:0 2px 8px rgba(0,0,0,.55); }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0}
+    :root { --glass: rgba(255,255,255,.12); --shadow: 0 10px 24px rgba(0,0,0,.35) }
+    *{box-sizing:border-box} html,body{height:100%;margin:0}
     body{
       font-family:system-ui,"Noto Sans JP","Hiragino Sans","Meiryo",sans-serif;
       color:#fff; background:#000 center/cover no-repeat fixed; overflow:auto;
     }
-    #topbar{
-      position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center;
-      gap:8px; padding:10px 12px; background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));
-    }
-    #langBox{ display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:var(--glass); backdrop-filter: blur(6px); }
-    #langSelect{ appearance:none; background:transparent; color:#fff; border:none; font-weight:700; cursor:pointer; }
-    h1 { text-align:center; margin:8px 0 0; text-shadow:var(--text-shadow); font-size: clamp(22px,4.5vw,40px); }
-    p.lead{ text-align:center; opacity:.92; margin:4px 0 18px; text-shadow:var(--text-shadow) }
+    #topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0))}
+    .back{padding:8px 12px;border:none;border-radius:999px;background:var(--glass);color:#fff;font-weight:700;cursor:pointer;backdrop-filter: blur(6px)}
+    #langBox{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--glass);backdrop-filter: blur(6px)}
+    #langSelect{appearance:none;background:transparent;color:#fff;border:none;font-weight:700;cursor:pointer}
+    h1{text-align:center;margin:8px 0 0;text-shadow:0 2px 8px rgba(0,0,0,.55);font-size:clamp(22px,4.5vw,40px)}
+    p.lead{text-align:center;opacity:.92;margin:4px 0 18px;text-shadow:0 2px 8px rgba(0,0,0,.55)}
 
-    .grid{
-      display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap:16px; padding:16px;
-      max-width:1200px; margin:0 auto 40px;
-    }
-    .card{
-      background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.06);
-      border-radius:18px; padding:16px; backdrop-filter: blur(4px);
-      display:flex; flex-direction:column; align-items:center; gap:10px;
-      box-shadow: 0 10px 24px rgba(0,0,0,.35);
-    }
-    .card img{ width:min(38vw, 240px); height:auto; object-fit:contain; filter: drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
-    .name{ font-weight:800; text-align:center; }
-    .cap{ font-size:12px; opacity:.88 }
-    .pick{ margin-top:6px; padding:8px 14px; border:none; border-radius:12px; background:#74c1e6cc; color:#fff; font-weight:800; cursor:pointer; }
-    .back{
-      position:fixed; left:12px; bottom:12px; padding:8px 12px; border-radius:999px; background:var(--glass);
-      border:none; color:#fff; font-weight:700; cursor:pointer; backdrop-filter: blur(6px);
-    }
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;padding:16px;max-width:1200px;margin:0 auto 40px}
+    .card{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px;backdrop-filter: blur(4px);display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:var(--shadow)}
+    .card img{display:block;width:min(38vw,240px);height:auto;object-fit:contain;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
+    .name{font-weight:800;text-align:center}
+    .cap{font-size:12px;opacity:.88}
+    .pick{margin-top:6px;padding:10px 14px;border:none;border-radius:12px;background:#74c1e6cc;color:#fff;font-weight:800;cursor:pointer}
+    .pick:active{transform:translateY(1px)}
+    footer{position:sticky;bottom:0;width:fit-content;margin:0 auto 12px;font-size:12px;opacity:.9;background:var(--glass);padding:6px 10px;border-radius:10px;backdrop-filter: blur(6px)}
   </style>
 </head>
 <body>
@@ -54,7 +44,7 @@
     <div style="flex:1"></div>
     <div id="langBox">
       <span>🌐</span>
-      <select id="langSelect">
+      <select id="langSelect" aria-label="language">
         <option value="ja">日本語</option>
         <option value="en">English</option>
         <option value="zh">中文</option>
@@ -64,64 +54,40 @@
   </div>
 
   <h1 data-i18n="char.title">キャラクターを選ぶ</h1>
-  <p class="lead" data-i18n="char.note">※マカロンは進化ではなく「色の選択」です</p>
+  <p class="lead" data-i18n="char.note">はじめの相棒を選んでください</p>
 
   <section class="grid" id="charGrid">
-    <!-- 種キャラ 4 -->
+    <!-- 4種：pink / blue / green / purple -->
     <div class="card">
-      <img src="public/characters/tane_pink.png" alt="Mi (Pink)" loading="lazy">
+      <img src="public/assets/stage1/pink_open.png" alt="Mi (Pink)" loading="eager" decoding="async">
       <div class="name">Mi（ピンク）/ Mi (Pink)</div>
       <div class="cap" data-i18n="char.seed">はじめの相棒</div>
-      <button class="pick" data-path="public/characters/tane_pink.png" data-i18n="char.choose">この子にする</button>
+      <button class="pick" data-path="public/assets/stage1/pink_open.png" data-i18n="char.choose">この子にする</button>
     </div>
     <div class="card">
-      <img src="public/characters/tane_blue.png" alt="Be (Blue)" loading="lazy">
+      <img src="public/assets/stage1/blue_open.png" alt="Be (Blue)" loading="eager" decoding="async">
       <div class="name">Be（ブルー）/ Be (Blue)</div>
       <div class="cap" data-i18n="char.seed">はじめの相棒</div>
-      <button class="pick" data-path="public/characters/tane_blue.png" data-i18n="char.choose">この子にする</button>
+      <button class="pick" data-path="public/assets/stage1/blue_open.png" data-i18n="char.choose">この子にする</button>
     </div>
     <div class="card">
-      <img src="public/characters/tane_green.png" alt="Co (Green)" loading="lazy">
+      <img src="public/assets/stage1/green_open.png" alt="Co (Green)" loading="eager" decoding="async">
       <div class="name">Co（グリーン）/ Co (Green)</div>
       <div class="cap" data-i18n="char.seed">はじめの相棒</div>
-      <button class="pick" data-path="public/characters/tane_green.png" data-i18n="char.choose">この子にする</button>
+      <button class="pick" data-path="public/assets/stage1/green_open.png" data-i18n="char.choose">この子にする</button>
     </div>
     <div class="card">
-      <img src="public/characters/tane_purple.png" alt="Su (Purple)" loading="lazy">
+      <img src="public/assets/stage1/purple_open.png" alt="Su (Purple)" loading="eager" decoding="async">
       <div class="name">Su（パープル）/ Su (Purple)</div>
       <div class="cap" data-i18n="char.seed">はじめの相棒</div>
-      <button class="pick" data-path="public/characters/tane_purple.png" data-i18n="char.choose">この子にする</button>
-    </div>
-
-    <!-- マカロン 4（色選択） -->
-    <div class="card">
-      <img src="public/assets/stage1/macaron_pink.png" alt="Macaron Pink" loading="lazy">
-      <div class="name" data-i18n="char.m_pink">マカロン（ピンク）</div>
-      <div class="cap" data-i18n="char.memo">色の選択</div>
-      <button class="pick" data-path="public/assets/stage1/macaron_pink.png" data-i18n="char.choose">この子にする</button>
-    </div>
-    <div class="card">
-      <img src="public/assets/stage1/macaron_blue.png" alt="Macaron Blue" loading="lazy">
-      <div class="name" data-i18n="char.m_blue">マカロン（ブルー）</div>
-      <div class="cap" data-i18n="char.memo">色の選択</div>
-      <button class="pick" data-path="public/assets/stage1/macaron_blue.png" data-i18n="char.choose">この子にする</button>
-    </div>
-    <div class="card">
-      <img src="public/assets/stage1/macaron_green.png" alt="Macaron Green" loading="lazy">
-      <div class="name" data-i18n="char.m_green">マカロン（グリーン）</div>
-      <div class="cap" data-i18n="char.memo">色の選択</div>
-      <button class="pick" data-path="public/assets/stage1/macaron_green.png" data-i18n="char.choose">この子にする</button>
-    </div>
-    <div class="card">
-      <img src="public/assets/stage1/macaron_purple.png" alt="Macaron Purple" loading="lazy">
-      <div class="name" data-i18n="char.m_purple">マカロン（パープル）</div>
-      <div class="cap" data-i18n="char.memo">色の選択</div>
-      <button class="pick" data-path="public/assets/stage1/macaron_purple.png" data-i18n="char.choose">この子にする</button>
+      <button class="pick" data-path="public/assets/stage1/purple_open.png" data-i18n="char.choose">この子にする</button>
     </div>
   </section>
 
+  <footer data-i18n="char.tip">クリック／タップで選択 → 潮干狩りへ進みます</footer>
+
   <script>
-    // ===== 背景（index と同じルール） =====
+    // 背景（時刻で切替）
     (function setBg(){
       const h = new Date().getHours();
       let bg = "public/items/bg/beach_day.jpg";
@@ -130,24 +96,12 @@
       document.body.style.backgroundImage = `url('${bg}')`;
     })();
 
-    // ===== i18n 共有テーブル =====
+    // i18n
     const I18N = {
-      ja:{
-        char:{ title:"キャラクターを選ぶ", note:"※マカロンは進化ではなく「色の選択」です", seed:"はじめの相棒", choose:"この子にする",
-               m_pink:"マカロン（ピンク）", m_blue:"マカロン（ブルー）", m_green:"マカロン（グリーン）", m_purple:"マカロン（パープル）" }
-      },
-      en:{
-        char:{ title:"Choose Your Character", note:"*Macaron is a color choice, not evolution.", seed:"First companion", choose:"Choose",
-               m_pink:"Macaron (Pink)", m_blue:"Macaron (Blue)", m_green:"Macaron (Green)", m_purple:"Macaron (Purple)" }
-      },
-      zh:{
-        char:{ title:"选择角色", note:"*马卡龙只是颜色选择，并非进化。", seed:"最初的伙伴", choose:"就选TA",
-               m_pink:"马卡龙（粉）", m_blue:"马卡龙（蓝）", m_green:"马卡龙（绿）", m_purple:"马卡龙（紫）" }
-      },
-      ko:{
-        char:{ title:"캐릭터 선택", note:"*마카롱은 진화가 아니라 색상 선택입니다.", seed:"첫 동반자", choose:"선택",
-               m_pink:"마카롱(핑크)", m_blue:"마카롱(블루)", m_green:"마카롱(그린)", m_purple:"마카롱(퍼플)" }
-      }
+      ja:{ char:{ title:"キャラクターを選ぶ", note:"はじめの相棒を選んでください", seed:"はじめの相棒", choose:"この子にする", tip:"クリック／タップで選択 → 潮干狩りへ進みます" } },
+      en:{ char:{ title:"Choose Your Character", note:"Pick your first companion.",     seed:"First companion", choose:"Choose", tip:"Tap to choose → Go to clamming" } },
+      zh:{ char:{ title:"选择角色",              note:"请选择你的第一位伙伴。",          seed:"最初的伙伴",    choose:"就选TA",   tip:"点击选择 → 进入潮间带挖贝" } },
+      ko:{ char:{ title:"캐릭터 선택",           note:"첫 번째 동반자를 선택하세요.",     seed:"첫 동반자",     choose:"선택",     tip:"탭하여 선택 → 조개잡이로 이동" } }
     };
     function getLang(){ return localStorage.getItem("whoai_lang") || navigator.language.slice(0,2) || "ja"; }
     function setLang(lang){ localStorage.setItem("whoai_lang", lang); document.documentElement.setAttribute("lang", lang); }
@@ -164,17 +118,22 @@
     setLang(getLang()); applyI18n();
     document.getElementById("langSelect").addEventListener("change", e=>{ setLang(e.target.value); applyI18n(); });
 
-    // ===== 画像選択 → 保存 → 次のページへ =====
+    // 選択 → 保存 → asari.html へ（確実に遷移）
+    function goAsari(){
+      // デプロイ先のサブパスでも壊れないように、相対で明示
+      const target = new URL("asari.html", location.href).href;
+      window.location.assign(target);
+    }
     function selectChar(path){
-      localStorage.setItem("whoai_character_src", path);   // asari.html で読む
-      localStorage.setItem("whoai_lastPage", "asari.html"); // 続きから用
-      location.href = "asari.html";
+      localStorage.setItem("whoai_character_src", path);
+      localStorage.setItem("whoai_lastPage", "asari.html");
+      goAsari();
     }
     document.querySelectorAll(".pick").forEach(btn=>{
       btn.addEventListener("click", ()=> selectChar(btn.dataset.path));
     });
 
-    // 現在ページ名の保存
+    // 「続きから」用
     localStorage.setItem("whoai_lastPage", "char.html");
   </script>
 </body>
